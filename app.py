@@ -1194,4 +1194,144 @@ elif page in ["🚨 流量异常检测", "🚨 Anomaly Detection"]:
             font=dict(size=14),
             legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1, font=dict(size=13)),
             xaxis=dict(tickfont=dict(size=12)),
-            yaxis=dict(tickfont=dict(size=13), title=dict
+            
+              yaxis=dict(tickfont=dict(size=13), title=dict(text=metric_choice, font=dict(size=14))),
+            margin=dict(l=60, r=20, t=40, b=40)
+        )
+        
+        st.plotly_chart(fig_anomaly, use_container_width=True)
+        
+        # 异常事件列表
+        if anomaly_count > 0:
+            st.markdown(f"### {'📋 异常事件明细' if lang == '中文' else '📋 Anomaly Details'}")
+            anomaly_list = anomalies[['data_date', metric_choice, 'z_score']].copy()
+            anomaly_list['data_date'] = anomaly_list['data_date'].dt.strftime('%Y-%m-%d')
+            anomaly_list['z_score'] = anomaly_list['z_score'].apply(lambda x: f"{x:.2f}")
+            anomaly_list['type'] = anomaly_list['z_score'].apply(
+                lambda x: ('📈 正向异常' if lang == '中文' else '📈 Positive') if float(x) > 0 else ('📉 负向异常' if lang == '中文' else '📉 Negative')
+            )
+            anomaly_list.columns = [
+                'Date' if lang == 'English' else '日期',
+                metric_choice,
+                'Z-Score',
+                'Type' if lang == 'English' else '类型'
+            ]
+            st.dataframe(anomaly_list.reset_index(drop=True), use_container_width=True)
+    else:
+        st.warning("未找到日期维度数据" if lang == '中文' else "Date dimension data not found")
+
+# ============================================================
+# 页面9：优化建议
+# ============================================================
+elif page in ["🚀 优化建议", "🚀 Recommendations"]:
+    st.markdown(f'<div class="page-title">{"🚀 SEO 优化建议" if lang == "中文" else "🚀 SEO Recommendations"}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="page-subtitle">{"基于数据分析自动生成的优化优先级建议" if lang == "中文" else "Data-driven optimization recommendations"}</div>', unsafe_allow_html=True)
+    
+    score_result = calculate_seo_score(data)
+    
+    # 优化优先级
+    recommendations = []
+    
+    # 基于评分维度生成建议
+    dims_scores = score_result['dimensions']
+    
+    # 搜索表现建议
+    if dims_scores['search_performance'] < 70:
+        recommendations.append({
+            'priority': 'P0',
+            'category': '搜索表现' if lang == '中文' else 'Search Performance',
+            'issue': '平均排名偏低（23.8），大量关键词未进入前10' if lang == '中文' else 'Average position too low (23.8), many keywords not in top 10',
+            'action': '聚焦排名11-20的关键词，优化对应页面的内容深度和内链结构' if lang == '中文' else 'Focus on keywords ranked 11-20, optimize content depth and internal linking',
+            'impact': '⬆️ 高' if lang == '中文' else '⬆️ High'
+        })
+    
+    if dims_scores['search_performance'] < 60:
+        recommendations.append({
+            'priority': 'P0',
+            'category': '点击率' if lang == '中文' else 'CTR',
+            'issue': 'CTR仅1.46%，远低于行业平均2-3%' if lang == '中文' else 'CTR only 1.46%, well below industry average 2-3%',
+            'action': '优化 Title 和 Meta Description，加入数字、年份、行动号召词' if lang == '中文' else 'Optimize Title & Meta Description with numbers, dates, and CTAs',
+            'impact': '⬆️ 高' if lang == '中文' else '⬆️ High'
+        })
+    
+    # 内容效果建议
+    if dims_scores['content_effectiveness'] < 80:
+        recommendations.append({
+            'priority': 'P1',
+            'category': '内容效果' if lang == '中文' else 'Content',
+            'issue': '活跃页面比例有提升空间' if lang == '中文' else 'Active page ratio can be improved',
+            'action': '识别零点击页面，更新内容或合并低质量页面' if lang == '中文' else 'Identify zero-click pages, update content or consolidate low-quality pages',
+            'impact': '⬆️ 中' if lang == '中文' else '⬆️ Medium'
+        })
+    
+    # 技术体验建议
+    if dims_scores['technical_experience'] < 80:
+        recommendations.append({
+            'priority': 'P1',
+            'category': '技术体验' if lang == '中文' else 'Technical',
+            'issue': '移动端体验可能需要优化' if lang == '中文' else 'Mobile experience may need optimization',
+            'action': '检查移动端页面加载速度和Core Web Vitals指标' if lang == '中文' else 'Check mobile page speed and Core Web Vitals',
+            'impact': '⬆️ 中' if lang == '中文' else '⬆️ Medium'
+        })
+    
+    # 通用建议
+    recommendations.append({
+        'priority': 'P2',
+        'category': '外链建设' if lang == '中文' else 'Backlinks',
+        'issue': '当前未接入外链数据，无法评估域名权威度' if lang == '中文' else 'No backlink data available, cannot assess domain authority',
+        'action': '接入 Ahrefs/Moz API，建立外链监控体系' if lang == '中文' else 'Integrate Ahrefs/Moz API for backlink monitoring',
+        'impact': '⬆️ 中' if lang == '中文' else '⬆️ Medium'
+    })
+    
+    recommendations.append({
+        'priority': 'P2',
+        'category': '趋势监控' if lang == '中文' else 'Trend Monitoring',
+        'issue': '近期点击量呈下降趋势' if lang == '中文' else 'Recent click trend is declining',
+        'action': '排查是否有页面被降权、索引丢失或算法更新影响' if lang == '中文' else 'Investigate potential deindexing, penalties, or algorithm updates',
+        'impact': '⬆️ 高' if lang == '中文' else '⬆️ High'
+    })
+    
+    # 展示建议表格
+    if recommendations:
+        st.markdown(f"### {'📋 优化行动清单' if lang == '中文' else '📋 Action Items'}")
+        
+        for i, rec in enumerate(recommendations):
+            priority_color = {'P0': '#dc2626', 'P1': '#d97706', 'P2': '#2563eb'}
+            color = priority_color.get(rec['priority'], '#6b7280')
+            
+            st.markdown(f"""
+            <div style="border-left: 4px solid {color}; padding: 1rem 1.5rem; margin: 0.8rem 0; background: #f9fafb; border-radius: 0 8px 8px 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; color: {color}; font-size: 0.9rem;">{rec['priority']}</span>
+                    <span style="font-size: 0.85rem; color: #6b7280;">{rec['category']}</span>
+                    <span style="font-size: 0.85rem;">{rec['impact']}</span>
+                </div>
+                <div style="margin-top: 0.5rem; font-size: 1rem; color: #111827; font-weight: 600;">{rec['issue']}</div>
+                <div style="margin-top: 0.3rem; font-size: 0.95rem; color: #4b5563;">💡 {rec['action']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # 评分提升路径
+    st.markdown("---")
+    st.markdown(f"### {'📈 评分提升路径' if lang == '中文' else '📈 Score Improvement Path'}")
+    
+    current_score = score_result['final_score']
+    
+    st.markdown(f"""
+    <div style="background: #eff6ff; padding: 1.5rem; border-radius: 12px;">
+        <div style="font-size: 1.1rem; font-weight: 600; color: #1a56db; margin-bottom: 1rem;">
+            {"当前评分" if lang == "中文" else "Current Score"}: {current_score} → {"目标" if lang == "中文" else "Target"}: 75+
+        </div>
+        <div style="font-size: 0.95rem; color: #374151; line-height: 1.8;">
+            {"• 短期（1-2周）：优化 Title/Description → CTR 提升至 2%+ → 预计 +5 分" if lang == "中文" else "• Short-term (1-2 weeks): Optimize Title/Description → CTR to 2%+ → Est. +5 pts"}<br>
+            {"• 中期（1-2月）：关键词排名优化 → 平均排名进入前15 → 预计 +8 分" if lang == "中文" else "• Mid-term (1-2 months): Keyword ranking optimization → Avg position to top 15 → Est. +8 pts"}<br>
+            {"• 长期（3-6月）：内容体系建设 + 外链积累 → 综合提升 → 预计 +12 分" if lang == "中文" else "• Long-term (3-6 months): Content system + backlink building → Est. +12 pts"}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 外链权威预留
+    st.markdown("---")
+    st.info(f"{'🔗 外链权威维度（Backlink Authority, 预留权重15%）将在接入第三方 API 后启用，届时评分模型将升级为四维体系。' if lang == '中文' else '🔗 Backlink Authority dimension (reserved 15% weight) will be enabled after third-party API integration.'}")
+
+
