@@ -1012,8 +1012,234 @@ elif page == '📱 User Experience Signals':
                     name=device, line=dict(color=colors.get(device, '#6B7280'), width=2)
                 ))
             
-            fig_trend.update_layout(
                 height=350,
                 legend=dict(orientation='h', yanchor='bottom', y=1.02, font=dict(size=13)),
                 xaxis=dict(tickfont=dict(size=12)),
+                yaxis=dict(title=dict(text='Clicks', font=dict(size=14)), tickfont=dict(size=12), gridcolor='#F3F4F6'),
+                **CHART_LAYOUT
+            )
+            st.plotly_chart(fig_trend, use_container_width=True)
+    else:
+        st.info("未找到设备维度数据" if lang == '中文' else "Device dimension data not found")
+
+# ============================================================
+# 页面8：SEO Monitoring Center
+# ============================================================
+elif page == '🚨 SEO Monitoring Center':
+    st.markdown(f'<div class="page-title">{"SEO 监控中心" if lang == "中文" else "SEO Monitoring Center"}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="page-subtitle">{"基于统计模型的流量异常自动检测与告警" if lang == "中文" else "Statistical model-based traffic anomaly detection and alerting"}</div>', unsafe_allow_html=True)
+    
+    if 'by_date' in data:
+        df_date = data['by_date'].sort_values('data_date').copy()
+        
+        # Anomaly detection settings
+        col_s1, col_s2 = st.columns(2)
+        with col_s1:
+            metric_choice = st.selectbox(
+                "Monitor Metric" if lang == 'English' else "监控指标",
+                ['clicks', 'impressions', 'ctr', 'position'],
+                key='monitor_metric'
+            )
+        with col_s2:
+            sensitivity = st.slider(
+                "Sensitivity (σ)" if lang == 'English' else "灵敏度 (σ)",
+                1.0, 3.0, 2.0, 0.5,
+                key='sensitivity_slider'
+            )
+        
+        # Calculate anomalies using rolling statistics
+        df_date['rolling_mean'] = df_date[metric_choice].rolling(window=14, min_periods=3).mean()
+        df_date['rolling_std'] = df_date[metric_choice].rolling(window=14, min_periods=3).std()
+        df_date['upper_bound'] = df_date['rolling_mean'] + sensitivity * df_date['rolling_std']
+        df_date['lower_bound'] = df_date['rolling_mean'] - sensitivity * df_date['rolling_std']
+        df_date['is_anomaly'] = (df_date[metric_choice] > df_date['upper_bound']) | (df_date[metric_choice] < df_date['lower_bound'])
+        
+        anomalies = df_date[df_date['is_anomaly'] == True]
+        
+        # Summary metrics
+        col_m1, col_m2, col_m3 = st.columns(3)
+        with col_m1:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">{"检测到异常" if lang == "中文" else "Anomalies Detected"}</div>
+                <div class="metric-value" style="color:#EF4444;">{len(anomalies)}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_m2:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">{"监控天数" if lang == "中文" else "Days Monitored"}</div>
+                <div class="metric-value">{len(df_date)}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_m3:
+            anomaly_rate = len(anomalies) / max(len(df_date), 1) * 100
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-label">{"异常率" if lang == "中文" else "Anomaly Rate"}</div>
+                <div class="metric-value">{anomaly_rate:.1f}%</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown('<div class="spacer-md"></div>', unsafe_allow_html=True)
+        
+        # Anomaly chart
+        st.markdown(f'<div class="section-title">{"📊 异常检测可视化" if lang == "中文" else "📊 Anomaly Detection Visualization"}</div>', unsafe_allow_html=True)
+        
+        fig_anomaly = go.Figure()
+        
+        # Confidence band
+        fig_anomaly.add_trace(go.Scatter(
+            x=pd.concat([df_date['data_date'], df_date['data_date'][::-1]]),
+            y=pd.concat([df_date['upper_bound'], df_date['lower_bound'][::-1]]),
+            fill='toself', fillcolor='rgba(37,99,235,0.08)',
+            line=dict(color='rgba(0,0,0,0)'),
+            name='Normal Range', showlegend=True
+        ))
+        
+        # Main line
+        fig_anomaly.add_trace(go.Scatter(
+            x=df_date['data_date'], y=df_date[metric_choice],
+            line=dict(color='#2563EB', width=2),
+            name=metric_choice.capitalize()
+        ))
+        
+        # Moving average
+        fig_anomaly.add_trace(go.Scatter(
+            x=df_date['data_date'], y=df_date['rolling_mean'],
+            line=dict(color='#6B7280', width=1, dash='dash'),
+            name='14-day MA'
+        ))
+        
+        # Anomaly points
+        if len(anomalies) > 0:
+            fig_anomaly.add_trace(go.Scatter(
+                x=anomalies['data_date'], y=anomalies[metric_choice],
+                mode='markers',
+                marker=dict(color='#EF4444', size=10, symbol='x'),
+                name='Anomaly'
+            ))
+        
+        fig_anomaly.update_layout(
+            height=450,
+            legend=dict(orientation='h', yanchor='bottom', y=1.02, font=dict(size=13)),
+            xaxis=dict(title=dict(text='Date', font=dict(size=14)), tickfont=dict(size=12)),
+            yaxis=dict(title=dict(text=metric_choice.capitalize(), font=dict(size=14)), tickfont=dict(size=12), gridcolor='#F3F4F6'),
+            **CHART_LAYOUT
+        )
+        st.plotly_chart(fig_anomaly, use_container_width=True)
+        
+        # Anomaly list
+        if len(anomalies) > 0:
+            st.markdown(f'<div class="section-title">{"🚨 异常事件列表" if lang == "中文" else "🚨 Anomaly Events"}</div>', unsafe_allow_html=True)
+            anomaly_display = anomalies[['data_date', metric_choice, 'rolling_mean', 'upper_bound', 'lower_bound']].copy()
+            anomaly_display.columns = ['Date', 'Value', 'Expected', 'Upper Bound', 'Lower Bound']
+            anomaly_display['Deviation'] = ((anomaly_display['Value'] - anomaly_display['Expected']) / anomaly_display['Expected'].clip(lower=0.01) * 100).round(1).astype(str) + '%'
+            st.dataframe(anomaly_display.sort_values('Date', ascending=False).head(20).reset_index(drop=True), use_container_width=True)
+    else:
+        st.info("未找到日期维度数据" if lang == '中文' else "Date dimension data not found")
+
+# ============================================================
+# 页面9：Recommendations
+# ============================================================
+elif page == '🚀 Recommendations':
+    st.markdown(f'<div class="page-title">{"优化建议" if lang == "中文" else "Recommendations"}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="page-subtitle">{"基于数据分析的可执行 SEO 优化行动方案" if lang == "中文" else "Data-driven actionable SEO optimization plan"}</div>', unsafe_allow_html=True)
+    
+    score_result = calculate_seo_score(data)
+    
+    # Priority actions based on score
+    actions = []
+    
+    # P0: Critical
+    if score_result['dimensions']['search_performance'] < 70:
+        actions.append({
+            'priority': 'P0',
+            'color': '#EF4444',
+            'title': '关键词排名优化' if lang == '中文' else 'Keyword Ranking Optimization',
+            'desc': '平均排名23.8，需优化至前15。聚焦排名8-20的关键词，通过内容深化和内链建设提升排名。' if lang == '中文' else 'Average position 23.8, target top 15. Focus on keywords ranked 8-20, improve through content depth and internal linking.',
+            'impact': '预计提升搜索表现维度 +15分' if lang == '中文' else 'Expected: Search Performance +15 pts'
+        })
+    
+    if score_result['metrics'].get('avg_ctr', 0) < 0.02:
+        actions.append({
+            'priority': 'P0',
+            'color': '#EF4444',
+            'title': 'CTR 提升计划' if lang == '中文' else 'CTR Improvement Plan',
+            'desc': '当前CTR 1.46%，低于B2B行业基准2-3%。优化Title Tag加入数字和行动号召词，优化Meta Description突出价值主张。' if lang == '中文' else 'Current CTR 1.46%, below B2B benchmark 2-3%. Optimize Title Tags with numbers and CTAs, enhance Meta Descriptions with value propositions.',
+            'impact': '预计CTR提升至2%+，点击量增长40%' if lang == '中文' else 'Expected: CTR to 2%+, clicks +40%'
+        })
+    
+    # P1: Important
+    actions.append({
+        'priority': 'P1',
+        'color': '#F59E0B',
+        'title': '点击量趋势逆转' if lang == '中文' else 'Click Trend Reversal',
+        'desc': '近期点击量呈下降趋势。建议：1) 更新高展示低点击页面内容；2) 增加长尾关键词覆盖；3) 提升内容发布频率。' if lang == '中文' else 'Recent click trend declining. Actions: 1) Update high-impression low-click pages; 2) Expand long-tail keyword coverage; 3) Increase content publishing frequency.',
+        'impact': '预计3个月内逆转下降趋势' if lang == '中文' else 'Expected: Reverse decline within 3 months'
+    })
+    
+    actions.append({
+        'priority': 'P1',
+        'color': '#F59E0B',
+        'title': '外链权威建设' if lang == '中文' else 'Backlink Authority Building',
+        'desc': '外链维度当前未接入（预留15%权重）。建议接入Ahrefs/Moz API获取DA/DR数据，完善评分体系。' if lang == '中文' else 'Backlink dimension not connected (15% weight reserved). Integrate Ahrefs/Moz API for DA/DR data to complete scoring system.',
+        'impact': '接入后总分预计提升8-12分' if lang == '中文' else 'Expected: Total score +8-12 pts after integration'
+    })
+    
+    # P2: Nice to have
+    actions.append({
+        'priority': 'P2',
+        'color': '#2563EB',
+        'title': '移动端体验优化' if lang == '中文' else 'Mobile Experience Optimization',
+        'desc': '移动端流量占比12.96%，符合B2B特征但仍有提升空间。确保Core Web Vitals达标，优化移动端页面加载速度。' if lang == '中文' else 'Mobile traffic 12.96%, typical for B2B but room for growth. Ensure Core Web Vitals compliance, optimize mobile page speed.',
+        'impact': '预计移动端CTR提升20%' if lang == '中文' else 'Expected: Mobile CTR +20%'
+    })
+    
+    # Display actions
+    for action in actions:
+        st.markdown(f"""
+        <div class="action-item" style="border-left-color:{action['color']};">
+            <div class="action-priority" style="color:{action['color']};">{action['priority']}</div>
+            <div class="action-title">{action['title']}</div>
+            <div class="action-desc">{action['desc']}</div>
+            <div style="font-size:13px; color:#10B981; margin-top:8px; font-weight:500;">📈 {action['impact']}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown('<div class="spacer-lg"></div>', unsafe_allow_html=True)
+    
+    # Score improvement projection
+    st.markdown(f'<div class="section-title">{"📊 评分提升预测" if lang == "中文" else "📊 Score Improvement Projection"}</div>', unsafe_allow_html=True)
+    
+    current = score_result['final_score']
+    projections = [
+        ('Current' if lang == 'English' else '当前', current),
+        ('+Backlink API' if lang == 'English' else '+外链接入', current + 10),
+        ('+CTR Optimize' if lang == 'English' else '+CTR优化', current + 15),
+        ('+Ranking Up' if lang == 'English' else '+排名提升', current + 22),
+        ('Target' if lang == 'English' else '目标', min(current + 28, 95))
+    ]
+    
+    fig_proj = go.Figure(go.Waterfall(
+        x=[p[0] for p in projections],
+        y=[projections[0][1]] + [projections[i][1] - projections[i-1][1] for i in range(1, len(projections))],
+        measure=['absolute'] + ['relative'] * (len(projections) - 1),
+        connector=dict(line=dict(color='#D1D5DB')),
+        increasing=dict(marker_color='#10B981'),
+        totals=dict(marker_color='#2563EB'),
+        textposition='outside',
+        textfont=dict(size=14),
+        text=[str(p[1]) for p in projections]
+    ))
+    
+    fig_proj.update_layout(
+        height=400,
+        xaxis=dict(tickfont=dict(size=14)),
+        yaxis=dict(title=dict(text='Score', font=dict(size=14)), tickfont=dict(size=12), range=[0, 100], gridcolor='#F3F4F6'),
+        **CHART_LAYOUT
+    )
+    st.plotly_chart(fig_proj, use_container_width=True)
+
+
 
