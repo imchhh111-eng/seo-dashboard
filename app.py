@@ -5,211 +5,280 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import os
+
+# ============================================================
+# 多语言翻译字典
+# ============================================================
+TRANSLATIONS = {
+    "zh": {
+        # 全局
+        "app_title": "B2B独立站 SEO 健康度诊断工具",
+        "app_subtitle": "基于 Google Search Console 数据 | v2.0",
+        "language_label": "🌐 Language / 语言",
+        "nav_title": "导航菜单",
+        "data_range": "数据范围",
+        "to": "至",
+        # 导航
+        "nav_overview": "📊 总览仪表盘",
+        "nav_health": "🏥 SEO Health Score",
+        "nav_search": "📈 搜索表现趋势",
+        "nav_page": "📄 页面效果分析",
+        "nav_country": "🌍 国家/地区分析",
+        "nav_device": "📱 设备分布",
+        "nav_anomaly": "🚨 流量异常检测",
+        # 总览
+        "overview_title": "B2B独立站 SEO 总览仪表盘",
+        "total_clicks": "总点击数",
+        "total_impressions": "总展示次数",
+        "avg_ctr": "平均CTR",
+        "avg_position": "平均排名",
+        "active_pages": "活跃页面数",
+        "total_queries": "关键词数",
+        "total_countries": "覆盖国家数",
+        "data_period": "数据周期（天）",
+        "select_module": "请从左侧导航菜单选择具体分析模块，查看详细诊断报告。",
+        # 健康度
+        "health_title": "SEO Health Score",
+        "health_subtitle": "三维加权评分模型",
+        "overall_score": "综合评分",
+        "grade": "等级",
+        "grade_excellent": "优秀",
+        "grade_good": "良好",
+        "grade_average": "一般",
+        "grade_poor": "较差",
+        "dimension_scores": "各维度得分",
+        "search_performance": "Search Performance",
+        "page_effectiveness": "Page Effectiveness",
+        "tech_experience": "Technical Experience Signals",
+        "weight": "权重",
+        "score_detail": "评分明细",
+        "indicator": "指标",
+        "value": "实际值",
+        "score": "得分",
+        "benchmark": "基准",
+        "methodology": "评分方法论",
+        "methodology_desc": "本评分基于 GSC 真实数据，采用三维加权模型。各维度权重根据数据可得性和业务重要性分配。",
+        "expansion_note": "扩展说明",
+        "expansion_desc": "当前评分基于 GSC 可用数据。未来可接入 Ahrefs/SEMrush API 补充外链权威维度（建议权重15-20%），届时现有维度权重将等比缩减。",
+        # 搜索趋势
+        "search_title": "搜索表现趋势",
+        "click_impression_trend": "点击数 & 展示次数趋势",
+        "ctr_position_trend": "CTR & 平均排名趋势",
+        "date_range": "选择日期范围",
+        "granularity": "时间粒度",
+        "daily": "日",
+        "weekly": "周",
+        "monthly": "月",
+        "clicks": "点击数",
+        "impressions": "展示次数",
+        "ctr": "CTR",
+        "position": "平均排名",
+        # 页面效果
+        "page_title": "页面效果分析",
+        "page_opportunity": "页面机会矩阵",
+        "high_imp_low_click": "⚡ 高曝光低点击（优先优化）",
+        "high_imp_high_click": "⭐ 高曝光高点击（保持增长）",
+        "low_imp_low_click": "💤 低曝光低点击（低优先级）",
+        "low_imp_high_click": "🌱 低曝光高点击（内容扩展）",
+        "top_pages": "Top 页面表现",
+        "page_url": "页面URL",
+        "opportunity_type": "机会类型",
+        "recommendation": "优化建议",
+        # 国家
+        "country_title": "国家/地区分析",
+        "top_countries_clicks": "Top 国家（按点击）",
+        "top_countries_impressions": "Top 国家（按展示）",
+        "country_distribution": "国家分布地图",
+        "country_detail": "国家详细数据",
+        # 设备
+        "device_title": "设备分布分析",
+        "device_clicks": "各设备点击占比",
+        "device_impressions": "各设备展示占比",
+        "device_ctr_compare": "各设备CTR对比",
+        "device_trend": "设备趋势变化",
+        # 异常检测
+        "anomaly_title": "流量异常检测",
+        "anomaly_method": "检测方法",
+        "zscore": "Z-Score 检测",
+        "iqr": "IQR 四分位检测",
+        "rolling": "滚动均值偏离",
+        "sensitivity": "灵敏度",
+        "anomaly_results": "异常检测结果",
+        "anomaly_count": "检测到异常点数",
+        "anomaly_detail": "异常详情",
+        "no_data": "未找到相关数据，请检查数据文件。",
+    },
+    "en": {
+        # Global
+        "app_title": "B2B Website SEO Health Diagnostic Tool",
+        "app_subtitle": "Based on Google Search Console Data | v2.0",
+        "language_label": "🌐 Language / 语言",
+        "nav_title": "Navigation",
+        "data_range": "Data Range",
+        "to": "to",
+        # Navigation
+        "nav_overview": "📊 Overview Dashboard",
+        "nav_health": "🏥 SEO Health Score",
+        "nav_search": "📈 Search Performance Trends",
+        "nav_page": "📄 Page Effectiveness",
+        "nav_country": "🌍 Country/Region Analysis",
+        "nav_device": "📱 Device Distribution",
+        "nav_anomaly": "🚨 Traffic Anomaly Detection",
+        # Overview
+        "overview_title": "B2B Website SEO Overview Dashboard",
+        "total_clicks": "Total Clicks",
+        "total_impressions": "Total Impressions",
+        "avg_ctr": "Average CTR",
+        "avg_position": "Average Position",
+        "active_pages": "Active Pages",
+        "total_queries": "Total Keywords",
+        "total_countries": "Countries Covered",
+        "data_period": "Data Period (Days)",
+        "select_module": "Select a module from the left navigation menu for detailed diagnostic reports.",
+        # Health Score
+        "health_title": "SEO Health Score",
+        "health_subtitle": "Three-Dimensional Weighted Scoring Model",
+        "overall_score": "Overall Score",
+        "grade": "Grade",
+        "grade_excellent": "Excellent",
+        "grade_good": "Good",
+        "grade_average": "Average",
+        "grade_poor": "Poor",
+        "dimension_scores": "Dimension Scores",
+        "search_performance": "Search Performance",
+        "page_effectiveness": "Page Effectiveness",
+        "tech_experience": "Technical Experience Signals",
+        "weight": "Weight",
+        "score_detail": "Score Details",
+        "indicator": "Indicator",
+        "value": "Actual Value",
+        "score": "Score",
+        "benchmark": "Benchmark",
+        "methodology": "Scoring Methodology",
+        "methodology_desc": "This score is based on real GSC data using a three-dimensional weighted model. Dimension weights are allocated based on data availability and business importance.",
+        "expansion_note": "Expansion Note",
+        "expansion_desc": "Current scoring is based on available GSC data. Future integration with Ahrefs/SEMrush APIs can add a Backlink Authority dimension (suggested weight: 15-20%), with existing dimension weights proportionally reduced.",
+        # Search Trends
+        "search_title": "Search Performance Trends",
+        "click_impression_trend": "Clicks & Impressions Trend",
+        "ctr_position_trend": "CTR & Average Position Trend",
+        "date_range": "Select Date Range",
+        "granularity": "Time Granularity",
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "clicks": "Clicks",
+        "impressions": "Impressions",
+        "ctr": "CTR",
+        "position": "Avg Position",
+        # Page Effectiveness
+        "page_title": "Page Effectiveness Analysis",
+        "page_opportunity": "Page Opportunity Matrix",
+        "high_imp_low_click": "⚡ High Impression, Low Click (Priority Optimization)",
+        "high_imp_high_click": "⭐ High Impression, High Click (Maintain Growth)",
+        "low_imp_low_click": "💤 Low Impression, Low Click (Low Priority)",
+        "low_imp_high_click": "🌱 Low Impression, High Click (Content Expansion)",
+        "top_pages": "Top Pages Performance",
+        "page_url": "Page URL",
+        "opportunity_type": "Opportunity Type",
+        "recommendation": "Recommendation",
+        # Country
+        "country_title": "Country/Region Analysis",
+        "top_countries_clicks": "Top Countries (by Clicks)",
+        "top_countries_impressions": "Top Countries (by Impressions)",
+        "country_distribution": "Country Distribution Map",
+        "country_detail": "Country Detail Data",
+        # Device
+        "device_title": "Device Distribution Analysis",
+        "device_clicks": "Click Share by Device",
+        "device_impressions": "Impression Share by Device",
+        "device_ctr_compare": "CTR Comparison by Device",
+        "device_trend": "Device Trend Changes",
+        # Anomaly
+        "anomaly_title": "Traffic Anomaly Detection",
+        "anomaly_method": "Detection Method",
+        "zscore": "Z-Score Detection",
+        "iqr": "IQR Quartile Detection",
+        "rolling": "Rolling Mean Deviation",
+        "sensitivity": "Sensitivity",
+        "anomaly_results": "Anomaly Detection Results",
+        "anomaly_count": "Anomalies Detected",
+        "anomaly_detail": "Anomaly Details",
+        "no_data": "No relevant data found. Please check data files.",
+    }
+}
+
+def t(key):
+    """获取当前语言的翻译文本"""
+    lang = st.session_state.get("language", "zh")
+    return TRANSLATIONS.get(lang, TRANSLATIONS["zh"]).get(key, key)
 
 # ============================================================
 # 页面配置
 # ============================================================
 st.set_page_config(
-    page_title="SEO Health Analytics",
-    page_icon="🔍",
+    page_title="B2B SEO Health Dashboard",
+    page_icon="📊",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # ============================================================
-# 企业级配色方案（建议8）
-# ============================================================
-COLORS = {
-    'primary': '#1E3A8A',      # 深蓝
-    'secondary': '#3B82F6',    # 亮蓝
-    'success': '#10B981',      # 绿色（增长）
-    'warning': '#F59E0B',      # 橙色（风险）
-    'danger': '#EF4444',       # 红色（危险）
-    'background': '#F8FAFC',   # 浅灰背景
-    'card': '#FFFFFF',         # 白色卡片
-    'text': '#1E293B',         # 深色文字
-    'muted': '#64748B',        # 灰色文字
-}
-
-# ============================================================
-# 全局CSS样式（建议7、8）
+# 自定义样式
 # ============================================================
 st.markdown("""
 <style>
-    /* 隐藏默认Streamlit元素 */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* 全局背景 */
-    .stApp {
-        background-color: #F8FAFC;
-    }
-    
-    /* 顶部品牌导航栏 */
-    .top-nav {
-        background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
-        padding: 1rem 2rem;
-        border-radius: 0 0 12px 12px;
-        margin: -1rem -1rem 2rem -1rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    .top-nav h1 {
-        color: white;
-        font-size: 1.5rem;
-        margin: 0;
-        font-weight: 700;
-    }
-    .top-nav p {
-        color: rgba(255,255,255,0.8);
-        margin: 0;
-        font-size: 0.85rem;
-    }
-    
-    /* KPI卡片 */
-    .kpi-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        text-align: center;
-        border-top: 4px solid #3B82F6;
-    }
-    .kpi-card h3 {
-        color: #64748B;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 0.5rem;
-    }
-    .kpi-card .value {
-        color: #1E293B;
+    .main-header {
         font-size: 2rem;
         font-weight: 700;
-    }
-    
-    /* 健康度大卡片 */
-    .health-hero {
-        background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
-        border-radius: 16px;
-        padding: 2.5rem;
-        text-align: center;
-        color: white;
-        box-shadow: 0 4px 6px rgba(30,58,138,0.3);
-    }
-    .health-hero .score {
-        font-size: 4.5rem;
-        font-weight: 800;
-        margin: 0.5rem 0;
-    }
-    .health-hero .label {
-        font-size: 1rem;
-        opacity: 0.9;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-    }
-    .health-hero .status {
-        font-size: 1.2rem;
-        margin-top: 0.5rem;
-        opacity: 0.85;
-    }
-    
-    /* Insight卡片 */
-    .insight-card {
-        background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
-        border-left: 4px solid #10B981;
-        border-radius: 8px;
-        padding: 1.2rem 1.5rem;
-        margin-top: 1rem;
-    }
-    .insight-card .title {
-        color: #065F46;
-        font-weight: 700;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        color: #1a1a2e;
         margin-bottom: 0.5rem;
     }
-    .insight-card .content {
-        color: #1E293B;
-        font-size: 0.9rem;
-        line-height: 1.5;
+    .sub-header {
+        font-size: 1rem;
+        color: #666;
+        margin-bottom: 2rem;
     }
-    
-    /* 机会卡片 */
-    .opportunity-card {
-        background: white;
-        border-radius: 12px;
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 1.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        border-left: 4px solid #F59E0B;
+        border-radius: 12px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
     }
-    .opportunity-card .title {
-        color: #92400E;
-        font-weight: 700;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    .opportunity-card .value {
-        color: #1E293B;
-        font-size: 1.8rem;
-        font-weight: 700;
-        margin: 0.3rem 0;
-    }
-    .opportunity-card .desc {
-        color: #64748B;
+    .metric-card h3 {
         font-size: 0.85rem;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
     }
-    
-    /* AI建议卡片 */
-    .ai-card {
-        background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-        border-left: 4px solid #1E3A8A;
-        border-radius: 8px;
-        padding: 1.2rem 1.5rem;
-        margin-top: 0.8rem;
+    .metric-card h1 {
+        font-size: 2rem;
+        margin: 0;
     }
-    .ai-card .priority {
-        color: #1E3A8A;
-        font-weight: 700;
-        font-size: 0.85rem;
+    .score-card {
+        padding: 2rem;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }
-    .ai-card .action {
-        color: #1E293B;
-        font-size: 0.9rem;
-        margin-top: 0.3rem;
+    .grade-A { background: linear-gradient(135deg, #00b09b, #96c93d); color: white; }
+    .grade-B { background: linear-gradient(135deg, #2196F3, #21CBF3); color: white; }
+    .grade-C { background: linear-gradient(135deg, #FF9800, #FF5722); color: white; }
+    .grade-D { background: linear-gradient(135deg, #f44336, #e91e63); color: white; }
+    .info-box {
+        background: #f0f7ff;
+        border-left: 4px solid #2196F3;
+        padding: 1rem 1.5rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
     }
-    .ai-card .impact {
-        color: #10B981;
-        font-size: 0.8rem;
-        font-weight: 600;
-        margin-top: 0.3rem;
-    }
-    
-    /* 进度条 */
-    .progress-bar {
-        background: #E2E8F0;
-        border-radius: 4px;
-        height: 8px;
-        margin: 0.3rem 0;
-    }
-    .progress-fill {
-        height: 100%;
-        border-radius: 4px;
-        transition: width 0.3s;
-    }
-    
-    /* Tab样式优化 */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        padding: 10px 20px;
-        font-weight: 600;
+    .warning-box {
+        background: #fff8e1;
+        border-left: 4px solid #FF9800;
+        padding: 1rem 1.5rem;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -219,845 +288,767 @@ st.markdown("""
 # ============================================================
 @st.cache_data
 def load_data():
-    base_path = "data/"
+    """加载所有数据文件"""
     data = {}
+    base_path = "data/"
     
     file_mapping = {
         'by_date': 'cleaned_by_date.csv',
-        'by_country': 'cleaned_by_country.csv',
         'by_device': 'cleaned_by_device.csv',
-        'daily_summary': 'cleaned_daily_summary.csv',
+        'by_country': 'cleaned_by_country.csv',
         'by_query': 'cleaned_by_query.csv',
         'by_page': 'cleaned_by_page.csv',
+        'daily_summary': 'cleaned_daily_summary.csv',
+        'query_page': 'cleaned_query_page.csv',
+        'date_query': 'cleaned_date_query.csv',
+        'date_page': 'cleaned_date_page.csv',
     }
     
     for key, filename in file_mapping.items():
-        filepath = os.path.join(base_path, filename)
-        if os.path.exists(filepath):
-            data[key] = pd.read_csv(filepath)
-        else:
-            data[key] = pd.DataFrame()
+        try:
+            df = pd.read_csv(f"{base_path}{filename}")
+            if 'data_date' in df.columns:
+                df['data_date'] = pd.to_datetime(df['data_date'])
+            data[key] = df
+        except FileNotFoundError:
+            data[key] = None
     
     return data
 
 data = load_data()
 
 # ============================================================
-# 计算核心指标
+# 侧边栏
 # ============================================================
-def calculate_metrics(data):
-    metrics = {}
+with st.sidebar:
+    # 语言切换
+    lang_options = {"中文": "zh", "English": "en"}
+    selected_lang = st.selectbox(
+        "🌐 Language / 语言",
+        options=list(lang_options.keys()),
+        index=0
+    )
+    st.session_state["language"] = lang_options[selected_lang]
     
-    # 基础指标
-    if not data.get('daily_summary', pd.DataFrame()).empty:
-        df = data['daily_summary']
-        metrics['total_clicks'] = int(df['clicks'].sum())
-        metrics['total_impressions'] = int(df['impressions'].sum())
-        metrics['avg_ctr'] = metrics['total_clicks'] / metrics['total_impressions'] * 100 if metrics['total_impressions'] > 0 else 0
-        metrics['avg_position'] = df['position'].mean()
-    else:
-        metrics['total_clicks'] = 0
-        metrics['total_impressions'] = 0
-        metrics['avg_ctr'] = 0
-        metrics['avg_position'] = 0
+    st.markdown("---")
+    st.markdown(f"### {t('app_title')}")
+    st.caption(t('app_subtitle'))
+    st.markdown("---")
     
-    # 关键词指标
-    if not data.get('by_query', pd.DataFrame()).empty:
-        df_q = data['by_query']
-        metrics['total_keywords'] = df_q['query'].nunique()
-        metrics['top10_keywords'] = df_q[df_q['position'] <= 10]['query'].nunique()
-        metrics['opportunity_keywords'] = df_q[(df_q['position'] > 10) & (df_q['position'] <= 30)]['query'].nunique()
-        metrics['long_tail'] = df_q[df_q['position'] > 30]['query'].nunique()
-    else:
-        metrics['total_keywords'] = 0
-        metrics['top10_keywords'] = 0
-        metrics['opportunity_keywords'] = 0
-        metrics['long_tail'] = 0
+    # 导航菜单
+    st.markdown(f"#### {t('nav_title')}")
+    page = st.radio(
+        "",
+        [t('nav_overview'), t('nav_health'), t('nav_search'), 
+         t('nav_page'), t('nav_country'), t('nav_device'), t('nav_anomaly')],
+        label_visibility="collapsed"
+    )
     
-    # 页面指标
-    if not data.get('by_page', pd.DataFrame()).empty:
-        df_p = data['by_page']
-        metrics['total_pages'] = df_p['page'].nunique()
-        metrics['pages_with_clicks'] = df_p[df_p['clicks'] > 0]['page'].nunique()
-    else:
-        metrics['total_pages'] = 0
-        metrics['pages_with_clicks'] = 0
-    
-    # 国家指标
-    if not data.get('by_country', pd.DataFrame()).empty:
-        df_c = data['by_country']
-        metrics['total_countries'] = df_c['country'].nunique()
-    else:
-        metrics['total_countries'] = 0
-    
-    return metrics
+    # 数据范围
+    st.markdown("---")
+    if data.get('by_date') is not None:
+        date_min = data['by_date']['data_date'].min()
+        date_max = data['by_date']['data_date'].max()
+        st.caption(f"📅 {t('data_range')}: {date_min.strftime('%Y-%m-%d')} {t('to')} {date_max.strftime('%Y-%m-%d')}")
 
-def calculate_health_score(metrics):
-    """计算SEO健康度评分（三维模型）"""
+# ============================================================
+# SEO Health Score 计算引擎（新三维模型）
+# ============================================================
+def calculate_health_score(data):
+    """
+    三维加权评分模型:
+    - Search Performance (40%): ClickScore×30% + ImpressionScore×30% + CTRScore×20% + RankingScore×20%
+    - Page Effectiveness (35%): PageCTR×40% + PageTraffic×30% + QueryCoverage×30%
+    - Technical Experience Signals (25%): MobileShare×40% + DeviceCoverage×30% + PositionStability×30%
+    """
     scores = {}
+    details = {}
     
-    # 关键词覆盖度评分 (0-100)
-    if metrics['total_keywords'] > 0:
-        top10_ratio = metrics['top10_keywords'] / metrics['total_keywords']
-        scores['keyword'] = min(100, top10_ratio * 100 * 3.5 + 30)
+    # === Search Performance (40%) ===
+    sp_scores = {}
+    if data.get('daily_summary') is not None:
+        df = data['daily_summary']
+        total_clicks = df['clicks'].sum()
+        total_impressions = df['impressions'].sum()
+        avg_ctr = df['ctr'].mean()
+        avg_position = df['position'].mean()
+        
+        # Click Score: 基于B2B行业基准（月均100-500点击为良好）
+        click_monthly = total_clicks / max(len(df), 1) * 30
+        if click_monthly >= 500: sp_scores['clicks'] = 95
+        elif click_monthly >= 200: sp_scores['clicks'] = 80
+        elif click_monthly >= 50: sp_scores['clicks'] = 65
+        elif click_monthly >= 10: sp_scores['clicks'] = 45
+        else: sp_scores['clicks'] = 25
+        
+        # Impression Score: 基于B2B行业基准（月均5000-20000展示为良好）
+        imp_monthly = total_impressions / max(len(df), 1) * 30
+        if imp_monthly >= 20000: sp_scores['impressions'] = 95
+        elif imp_monthly >= 5000: sp_scores['impressions'] = 80
+        elif imp_monthly >= 1000: sp_scores['impressions'] = 65
+        elif imp_monthly >= 200: sp_scores['impressions'] = 45
+        else: sp_scores['impressions'] = 25
+        
+        # CTR Score: B2B行业平均CTR约2-3%
+        avg_ctr_pct = avg_ctr * 100 if avg_ctr < 1 else avg_ctr
+        if avg_ctr_pct >= 5: sp_scores['ctr'] = 95
+        elif avg_ctr_pct >= 3: sp_scores['ctr'] = 80
+        elif avg_ctr_pct >= 1.5: sp_scores['ctr'] = 65
+        elif avg_ctr_pct >= 0.5: sp_scores['ctr'] = 45
+        else: sp_scores['ctr'] = 25
+        
+        # Ranking Score: 平均排名越低越好
+        if avg_position <= 10: sp_scores['position'] = 95
+        elif avg_position <= 20: sp_scores['position'] = 80
+        elif avg_position <= 30: sp_scores['position'] = 65
+        elif avg_position <= 50: sp_scores['position'] = 45
+        else: sp_scores['position'] = 25
+        
+        details['search_performance'] = {
+            'click_monthly': round(click_monthly, 1),
+            'imp_monthly': round(imp_monthly, 1),
+            'avg_ctr': round(avg_ctr_pct, 2),
+            'avg_position': round(avg_position, 1),
+            'scores': sp_scores
+        }
+    
+    sp_total = (sp_scores.get('clicks', 50) * 0.30 + 
+                sp_scores.get('impressions', 50) * 0.30 + 
+                sp_scores.get('ctr', 50) * 0.20 + 
+                sp_scores.get('position', 50) * 0.20)
+    scores['search_performance'] = round(sp_total, 1)
+    
+    # === Page Effectiveness (35%) ===
+    pe_scores = {}
+    if data.get('by_query') is not None and data.get('query_page') is not None:
+        df_query = data['by_query']
+        df_qp = data['query_page']
+        
+        # Query Coverage: 关键词覆盖度
+        unique_queries = df_query['query'].nunique() if 'query' in df_query.columns else 0
+        if unique_queries >= 500: pe_scores['query_coverage'] = 90
+        elif unique_queries >= 200: pe_scores['query_coverage'] = 75
+        elif unique_queries >= 50: pe_scores['query_coverage'] = 60
+        elif unique_queries >= 10: pe_scores['query_coverage'] = 40
+        else: pe_scores['query_coverage'] = 20
+        
+        # Page Traffic: 有流量的页面占比
+        if 'page' in df_qp.columns:
+            pages_with_clicks = df_qp[df_qp['clicks'] > 0]['page'].nunique()
+            total_pages = df_qp['page'].nunique()
+            page_traffic_rate = pages_with_clicks / max(total_pages, 1)
+            if page_traffic_rate >= 0.5: pe_scores['page_traffic'] = 90
+            elif page_traffic_rate >= 0.3: pe_scores['page_traffic'] = 75
+            elif page_traffic_rate >= 0.15: pe_scores['page_traffic'] = 60
+            elif page_traffic_rate >= 0.05: pe_scores['page_traffic'] = 40
+            else: pe_scores['page_traffic'] = 20
+        else:
+            pe_scores['page_traffic'] = 50
+            page_traffic_rate = 0
+        
+        # Page CTR: 页面平均CTR
+        if 'ctr' in df_qp.columns:
+            page_avg_ctr = df_qp['ctr'].mean()
+            page_avg_ctr_pct = page_avg_ctr * 100 if page_avg_ctr < 1 else page_avg_ctr
+            if page_avg_ctr_pct >= 5: pe_scores['page_ctr'] = 90
+            elif page_avg_ctr_pct >= 3: pe_scores['page_ctr'] = 75
+            elif page_avg_ctr_pct >= 1.5: pe_scores['page_ctr'] = 60
+            elif page_avg_ctr_pct >= 0.5: pe_scores['page_ctr'] = 40
+            else: pe_scores['page_ctr'] = 20
+        else:
+            pe_scores['page_ctr'] = 50
+            page_avg_ctr_pct = 0
+        
+        details['page_effectiveness'] = {
+            'unique_queries': unique_queries,
+            'page_traffic_rate': round(page_traffic_rate * 100, 1) if 'page_traffic_rate' in dir() else 0,
+            'page_avg_ctr': round(page_avg_ctr_pct, 2) if 'page_avg_ctr_pct' in dir() else 0,
+            'scores': pe_scores
+        }
+    elif data.get('by_query') is not None:
+        df_query = data['by_query']
+        unique_queries = df_query['query'].nunique() if 'query' in df_query.columns else 0
+        if unique_queries >= 500: pe_scores['query_coverage'] = 90
+        elif unique_queries >= 200: pe_scores['query_coverage'] = 75
+        elif unique_queries >= 50: pe_scores['query_coverage'] = 60
+        else: pe_scores['query_coverage'] = 40
+        pe_scores['page_traffic'] = 50
+        pe_scores['page_ctr'] = 50
+        details['page_effectiveness'] = {
+            'unique_queries': unique_queries,
+            'page_traffic_rate': 0,
+            'page_avg_ctr': 0,
+            'scores': pe_scores
+        }
+    
+    pe_total = (pe_scores.get('page_ctr', 50) * 0.40 + 
+                pe_scores.get('page_traffic', 50) * 0.30 + 
+                pe_scores.get('query_coverage', 50) * 0.30)
+    scores['page_effectiveness'] = round(pe_total, 1)
+    
+    # === Technical Experience Signals (25%) ===
+    te_scores = {}
+    if data.get('by_device') is not None:
+        df_device = data['by_device']
+        
+        # Mobile Share: 移动端展示占比
+        total_imp = df_device['impressions'].sum()
+        mobile_imp = df_device[df_device['device'].str.upper() == 'MOBILE']['impressions'].sum()
+        mobile_share = mobile_imp / max(total_imp, 1)
+        
+        # 移动端占比在30-60%为健康
+        if 0.3 <= mobile_share <= 0.6: te_scores['mobile_share'] = 90
+        elif 0.2 <= mobile_share <= 0.7: te_scores['mobile_share'] = 70
+        elif 0.1 <= mobile_share <= 0.8: te_scores['mobile_share'] = 50
+        else: te_scores['mobile_share'] = 30
+        
+        # Device Coverage: 设备覆盖度（3种设备都有数据）
+        device_count = df_device['device'].nunique()
+        if device_count >= 3: te_scores['device_coverage'] = 90
+        elif device_count >= 2: te_scores['device_coverage'] = 65
+        else: te_scores['device_coverage'] = 35
+        
+        # Position Stability: 排名稳定性（用变异系数衡量）
+        if 'position' in df_device.columns:
+            pos_std = df_device['position'].std()
+            pos_mean = df_device['position'].mean()
+            cv = pos_std / max(pos_mean, 1)
+            if cv <= 0.3: te_scores['position_stability'] = 90
+            elif cv <= 0.5: te_scores['position_stability'] = 70
+            elif cv <= 0.8: te_scores['position_stability'] = 50
+            else: te_scores['position_stability'] = 30
+        else:
+            te_scores['position_stability'] = 50
+            cv = 0
+        
+        details['tech_experience'] = {
+            'mobile_share': round(mobile_share * 100, 1),
+            'device_count': device_count,
+            'position_cv': round(cv, 2) if 'cv' in dir() else 0,
+            'scores': te_scores
+        }
+    
+    te_total = (te_scores.get('mobile_share', 50) * 0.40 + 
+                te_scores.get('device_coverage', 50) * 0.30 + 
+                te_scores.get('position_stability', 50) * 0.30)
+    scores['tech_experience'] = round(te_total, 1)
+    
+    # === 综合评分 ===
+    overall = (scores.get('search_performance', 50) * 0.40 + 
+               scores.get('page_effectiveness', 50) * 0.35 + 
+               scores.get('tech_experience', 50) * 0.25)
+    scores['overall'] = round(overall, 1)
+    
+    # 等级判定
+    if overall >= 90: grade = 'A'
+    elif overall >= 70: grade = 'B'
+    elif overall >= 50: grade = 'C'
+    else: grade = 'D'
+    scores['grade'] = grade
+    
+    return scores, details
+
+# ============================================================
+# 页面渲染函数
+# ============================================================
+
+def render_overview():
+    """总览仪表盘"""
+    st.markdown(f'<div class="main-header">{t("overview_title")}</div>', unsafe_allow_html=True)
+    
+    # 核心指标卡片
+    col1, col2, col3, col4 = st.columns(4)
+    
+    if data.get('daily_summary') is not None:
+        df = data['daily_summary']
+        total_clicks = int(df['clicks'].sum())
+        total_impressions = int(df['impressions'].sum())
+        avg_ctr = df['ctr'].mean()
+        avg_ctr_display = f"{avg_ctr*100:.2f}%" if avg_ctr < 1 else f"{avg_ctr:.2f}%"
+        avg_pos = df['position'].mean()
+    elif data.get('by_date') is not None:
+        df = data['by_date']
+        total_clicks = int(df['clicks'].sum())
+        total_impressions = int(df['impressions'].sum())
+        avg_ctr = df['ctr'].mean()
+        avg_ctr_display = f"{avg_ctr*100:.2f}%" if avg_ctr < 1 else f"{avg_ctr:.2f}%"
+        avg_pos = df['position'].mean()
     else:
-        scores['keyword'] = 0
-    
-    # 页面健康度评分 (0-100)
-    if metrics['total_pages'] > 0:
-        page_active_ratio = metrics['pages_with_clicks'] / metrics['total_pages']
-        scores['page'] = min(100, page_active_ratio * 100 * 2 + 20)
-    else:
-        scores['page'] = 0
-    
-    # 市场覆盖度评分 (0-100)
-    if metrics['total_countries'] > 0:
-        scores['market'] = min(100, metrics['total_countries'] * 1.5 + 40)
-    else:
-        scores['market'] = 0
-    
-    # 综合评分
-    scores['overall'] = scores['keyword'] * 0.4 + scores['page'] * 0.35 + scores['market'] * 0.25
-    
-    return scores
-
-metrics = calculate_metrics(data)
-scores = calculate_health_score(metrics)
-
-# ============================================================
-# 顶部导航栏（建议7）
-# ============================================================
-st.markdown("""
-<div class="top-nav">
-    <div>
-        <h1>🔍 SEO HEALTH ANALYTICS</h1>
-        <p>B2B Independent Site · Powered by GSC Data</p>
-    </div>
-    <div style="text-align: right;">
-        <p style="font-size: 0.9rem; color: white;">advich.com</p>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# ============================================================
-# Tab布局（建议6）
-# ============================================================
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📊 Overview", 
-    "🔑 Keyword Intelligence", 
-    "📄 Page Performance", 
-    "🌍 Market Expansion",
-    "🤖 Recommendations"
-])
-
-# ============================================================
-# Tab 1: Overview（建议1、2）
-# ============================================================
-with tab1:
-    # 健康度大卡片
-    col1, col2 = st.columns([1, 2])
+        total_clicks = total_impressions = 0
+        avg_ctr_display = "N/A"
+        avg_pos = 0
     
     with col1:
-        # 确定等级
-        overall_score = scores['overall']
-        if overall_score >= 90:
-            status = "Excellent Performance"
-            status_emoji = "🟢"
-        elif overall_score >= 70:
-            status = "Good Performance"
-            status_emoji = "🟡"
-        elif overall_score >= 50:
-            status = "Moderate Performance"
-            status_emoji = "🟠"
-        else:
-            status = "Needs Improvement"
-            status_emoji = "🔴"
-        
+        st.metric(t("total_clicks"), f"{total_clicks:,}")
+    with col2:
+        st.metric(t("total_impressions"), f"{total_impressions:,}")
+    with col3:
+        st.metric(t("avg_ctr"), avg_ctr_display)
+    with col4:
+        st.metric(t("avg_position"), f"{avg_pos:.1f}")
+    
+    # 第二行指标
+    col5, col6, col7, col8 = st.columns(4)
+    
+    active_pages = data['query_page']['page'].nunique() if data.get('query_page') is not None and 'page' in data['query_page'].columns else 0
+    total_queries = data['by_query']['query'].nunique() if data.get('by_query') is not None and 'query' in data['by_query'].columns else 0
+    total_countries = data['by_country']['country'].nunique() if data.get('by_country') is not None else 0
+    data_days = (data['by_date']['data_date'].max() - data['by_date']['data_date'].min()).days if data.get('by_date') is not None else 0
+    
+    with col5:
+        st.metric(t("active_pages"), f"{active_pages}")
+    with col6:
+        st.metric(t("total_queries"), f"{total_queries:,}")
+    with col7:
+        st.metric(t("total_countries"), f"{total_countries}")
+    with col8:
+        st.metric(t("data_period"), f"{data_days}")
+    
+    st.markdown(f'<div class="info-box">{t("select_module")}</div>', unsafe_allow_html=True)
+
+
+def render_health_score():
+    """SEO Health Score 页面"""
+    st.markdown(f'<div class="main-header">{t("health_title")}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sub-header">{t("health_subtitle")}</div>', unsafe_allow_html=True)
+    
+    scores, details = calculate_health_score(data)
+    
+    # 综合评分展示
+    grade = scores['grade']
+    overall = scores['overall']
+    grade_labels = {'A': t('grade_excellent'), 'B': t('grade_good'), 'C': t('grade_average'), 'D': t('grade_poor')}
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
         st.markdown(f"""
-        <div class="health-hero">
-            <div class="label">SEO HEALTH SCORE</div>
-            <div class="score">{overall_score:.1f}</div>
-            <div class="status">{status_emoji} {status}</div>
+        <div class="score-card grade-{grade}">
+            <h2 style="margin:0; font-size:3rem;">{grade}</h2>
+            <p style="margin:0.5rem 0; font-size:1.2rem;">{grade_labels.get(grade, '')}</p>
+            <h1 style="margin:0; font-size:2.5rem;">{overall} / 100</h1>
         </div>
         """, unsafe_allow_html=True)
-        
-        # 三维子分数（建议2）
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        for label, key, color in [
-            ("Keyword Coverage", "keyword", COLORS['secondary']),
-            ("Page Health", "page", COLORS['success']),
-            ("Market Coverage", "market", COLORS['warning'])
-        ]:
-            score_val = scores[key]
-            st.markdown(f"""
-            <div style="margin-bottom: 0.8rem;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
-                    <span style="color: {COLORS['text']}; font-weight: 600;">{label}</span>
-                    <span style="color: {COLORS['muted']};">{score_val:.0f}/100</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: {score_val}%; background: {color};"></div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # 三维度得分
+    st.subheader(t("dimension_scores"))
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        sp = scores.get('search_performance', 0)
+        st.metric(f"🔍 {t('search_performance')}", f"{sp}/100")
+        st.caption(f"{t('weight')}: 40%")
+        st.progress(sp / 100)
     
     with col2:
-        # Gauge图表
-        fig_gauge = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=overall_score,
-            domain={'x': [0, 1], 'y': [0, 1]},
-            title={'text': "Overall SEO Health", 'font': {'size': 18, 'color': COLORS['text']}},
-            number={'font': {'size': 48, 'color': COLORS['primary']}},
-            gauge={
-                'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': COLORS['muted']},
-                'bar': {'color': COLORS['primary']},
-                'bgcolor': "white",
-                'borderwidth': 2,
-                'bordercolor': "#E2E8F0",
-                'steps': [
-                    {'range': [0, 50], 'color': '#FEE2E2'},
-                    {'range': [50, 70], 'color': '#FEF3C7'},
-                    {'range': [70, 90], 'color': '#D1FAE5'},
-                    {'range': [90, 100], 'color': '#A7F3D0'}
-                ],
-                'threshold': {
-                    'line': {'color': COLORS['danger'], 'width': 4},
-                    'thickness': 0.75,
-                    'value': overall_score
-                }
+        pe = scores.get('page_effectiveness', 0)
+        st.metric(f"📄 {t('page_effectiveness')}", f"{pe}/100")
+        st.caption(f"{t('weight')}: 35%")
+        st.progress(pe / 100)
+    
+    with col3:
+        te = scores.get('tech_experience', 0)
+        st.metric(f"⚙️ {t('tech_experience')}", f"{te}/100")
+        st.caption(f"{t('weight')}: 25%")
+        st.progress(te / 100)
+    
+    # 雷达图
+    fig = go.Figure()
+    categories = [t('search_performance'), t('page_effectiveness'), t('tech_experience')]
+    values = [sp, pe, te]
+    
+    fig.add_trace(go.Scatterpolar(
+        r=values + [values[0]],
+        theta=categories + [categories[0]],
+        fill='toself',
+        fillcolor='rgba(102, 126, 234, 0.3)',
+        line=dict(color='#667eea', width=2),
+        name=t('dimension_scores')
+    ))
+    fig.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+        showlegend=False,
+        height=400
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # 评分明细
+    st.markdown("---")
+    st.subheader(t("score_detail"))
+    
+    if 'search_performance' in details:
+        sp_detail = details['search_performance']
+        with st.expander(f"🔍 {t('search_performance')} — {t('score')}: {sp}/100"):
+            detail_data = {
+                t('indicator'): [t('clicks') + '/月', t('impressions') + '/月', 'CTR', t('position')],
+                t('value'): [sp_detail['click_monthly'], sp_detail['imp_monthly'], f"{sp_detail['avg_ctr']}%", sp_detail['avg_position']],
+                t('score'): [sp_detail['scores'].get('clicks', 0), sp_detail['scores'].get('impressions', 0), sp_detail['scores'].get('ctr', 0), sp_detail['scores'].get('position', 0)],
+                t('weight'): ['30%', '30%', '20%', '20%']
             }
-        ))
-        fig_gauge.update_layout(
-            height=280,
-            margin=dict(l=20, r=20, t=50, b=20),
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)'
-        )
-        st.plotly_chart(fig_gauge, use_container_width=True)
-        
-        # KPI行
-        kpi_col1, kpi_col2, kpi_col3 = st.columns(3)
-        with kpi_col1:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <h3>Keywords Tracked</h3>
-                <div class="value">{metrics['total_keywords']:,}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        with kpi_col2:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <h3>Active Pages</h3>
-                <div class="value">{metrics['total_pages']:,}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        with kpi_col3:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <h3>Markets</h3>
-                <div class="value">{metrics['total_countries']:,}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.dataframe(pd.DataFrame(detail_data), use_container_width=True, hide_index=True)
     
+    if 'page_effectiveness' in details:
+        pe_detail = details['page_effectiveness']
+        with st.expander(f"📄 {t('page_effectiveness')} — {t('score')}: {pe}/100"):
+            detail_data = {
+                t('indicator'): ['Page CTR', 'Page Traffic Rate', 'Query Coverage'],
+                t('value'): [f"{pe_detail.get('page_avg_ctr', 0)}%", f"{pe_detail.get('page_traffic_rate', 0)}%", pe_detail.get('unique_queries', 0)],
+                t('score'): [pe_detail['scores'].get('page_ctr', 0), pe_detail['scores'].get('page_traffic', 0), pe_detail['scores'].get('query_coverage', 0)],
+                t('weight'): ['40%', '30%', '30%']
+            }
+            st.dataframe(pd.DataFrame(detail_data), use_container_width=True, hide_index=True)
+    
+    if 'tech_experience' in details:
+        te_detail = details['tech_experience']
+        with st.expander(f"⚙️ {t('tech_experience')} — {t('score')}: {te}/100"):
+            detail_data = {
+                t('indicator'): ['Mobile Share', 'Device Coverage', 'Position Stability (CV)'],
+                t('value'): [f"{te_detail.get('mobile_share', 0)}%", te_detail.get('device_count', 0), te_detail.get('position_cv', 0)],
+                t('score'): [te_detail['scores'].get('mobile_share', 0), te_detail['scores'].get('device_coverage', 0), te_detail['scores'].get('position_stability', 0)],
+                t('weight'): ['40%', '30%', '30%']
+            }
+            st.dataframe(pd.DataFrame(detail_data), use_container_width=True, hide_index=True)
+    
+    # 方法论说明
     st.markdown("---")
-    
-    # Top Opportunity区域（建议1）
-    st.markdown("### 🚀 Top Opportunities")
-    opp_col1, opp_col2, opp_col3 = st.columns(3)
-    
-    with opp_col1:
-        st.markdown(f"""
-        <div class="opportunity-card">
-            <div class="title">RANKING OPPORTUNITY</div>
-            <div class="value">{metrics['opportunity_keywords']}</div>
-            <div class="desc">keywords ready for ranking improvement (position 11-30)</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with opp_col2:
-        pages_need_opt = metrics['total_pages'] - metrics['pages_with_clicks']
-        pages_pct = (pages_need_opt / metrics['total_pages'] * 100) if metrics['total_pages'] > 0 else 0
-        st.markdown(f"""
-        <div class="opportunity-card">
-            <div class="title">PAGE OPTIMIZATION</div>
-            <div class="value">{pages_pct:.1f}%</div>
-            <div class="desc">pages need optimization (no clicks received)</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with opp_col3:
-        st.markdown(f"""
-        <div class="opportunity-card">
-            <div class="title">CTR IMPROVEMENT</div>
-            <div class="value">{metrics['avg_ctr']:.2f}%</div>
-            <div class="desc">current avg CTR · industry benchmark: 3-5%</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Key Insight（建议5）
-    st.markdown(f"""
-    <div class="insight-card">
-        <div class="title">💡 KEY INSIGHT</div>
-        <div class="content">
-            Most SEO growth potential comes from <strong>{metrics['opportunity_keywords']} existing keywords</strong> 
-            positioned between 11-30. Improving these to Top 10 could increase organic traffic by an estimated 
-            <strong>40-60%</strong> without acquiring new keywords.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f'<div class="info-box"><b>{t("methodology")}</b><br>{t("methodology_desc")}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="warning-box"><b>{t("expansion_note")}</b><br>{t("expansion_desc")}</div>', unsafe_allow_html=True)
 
 
-# ============================================================
-# Tab 2: Keyword Intelligence（建议3）
-# ============================================================
-with tab2:
-    if not data.get('by_query', pd.DataFrame()).empty:
-        df_q = data['by_query']
-        
-        st.markdown("### 🔑 Keyword Intelligence")
-        
-        # Ranking Funnel（建议3）
-        st.markdown("#### Ranking Distribution Funnel")
-        
-        # 取最新一期数据
-        latest_date = df_q['data_date'].max()
-        df_latest = df_q[df_q['data_date'] == latest_date]
-        
-        total_kw = df_latest['query'].nunique()
-        top10 = df_latest[df_latest['position'] <= 10]['query'].nunique()
-        page1_opp = df_latest[(df_latest['position'] > 10) & (df_latest['position'] <= 30)]['query'].nunique()
-        long_tail = df_latest[df_latest['position'] > 30]['query'].nunique()
-        
-        fig_funnel = go.Figure(go.Funnel(
-            y=['All Keywords', 'Top 10 (Page 1)', 'Page 1 Opportunity (11-30)', 'Long Tail (30+)'],
-            x=[total_kw, top10, page1_opp, long_tail],
-            textposition="inside",
-            textinfo="value+percent initial",
-            marker={
-                'color': [COLORS['primary'], COLORS['success'], COLORS['warning'], COLORS['muted']],
-            },
-            connector={"line": {"color": "#E2E8F0", "width": 2}}
-        ))
-        fig_funnel.update_layout(
-            height=350,
-            margin=dict(l=20, r=20, t=20, b=20),
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)'
+def render_search_trends():
+    """搜索表现趋势"""
+    st.markdown(f'<div class="main-header">{t("search_title")}</div>', unsafe_allow_html=True)
+    
+    df = data.get('by_date')
+    if df is None:
+        st.warning(t("no_data"))
+        return
+    
+    df = df.sort_values('data_date')
+    
+    # 日期范围选择
+    col1, col2 = st.columns(2)
+    with col1:
+        date_range = st.date_input(
+            t("date_range"),
+            value=(df['data_date'].min().date(), df['data_date'].max().date()),
+            min_value=df['data_date'].min().date(),
+            max_value=df['data_date'].max().date()
         )
-        st.plotly_chart(fig_funnel, use_container_width=True)
-        
-        # Bubble Chart - Keyword Opportunity（建议3）
-        st.markdown("#### Keyword Opportunity Map")
-        st.caption("X: Ranking Position | Y: Impressions | Size: Clicks | Color: Opportunity Level")
-        
-        # 聚合关键词数据
-        df_kw_agg = df_q.groupby('query').agg({
-            'clicks': 'sum',
-            'impressions': 'sum',
-            'position': 'mean',
-            'ctr': 'mean'
-        }).reset_index()
-        
-        # 只显示有展示的关键词
-        df_kw_agg = df_kw_agg[df_kw_agg['impressions'] > 0]
-        
-        # 定义机会等级
-        def get_opportunity(row):
-            if row['position'] <= 10:
-                return 'Maintain'
-            elif row['position'] <= 20 and row['impressions'] > 5:
-                return 'High Opportunity'
-            elif row['position'] <= 30:
-                return 'Medium Opportunity'
-            else:
-                return 'Low Priority'
-        
-        df_kw_agg['opportunity'] = df_kw_agg.apply(get_opportunity, axis=1)
-        
-        # 取Top 100展示量的关键词显示
-        df_bubble = df_kw_agg.nlargest(100, 'impressions')
-        
-        color_map = {
-            'Maintain': COLORS['success'],
-            'High Opportunity': COLORS['danger'],
-            'Medium Opportunity': COLORS['warning'],
-            'Low Priority': COLORS['muted']
-        }
-        
-        fig_bubble = px.scatter(
-            df_bubble,
-            x='position',
-            y='impressions',
-            size='clicks' if df_bubble['clicks'].sum() > 0 else 'impressions',
-            color='opportunity',
-            color_discrete_map=color_map,
-            hover_data=['query', 'ctr'],
-            size_max=40
-        )
-        fig_bubble.update_layout(
-            height=450,
-            xaxis_title="Average Ranking Position →",
-            yaxis_title="Total Impressions",
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            xaxis=dict(gridcolor='#E2E8F0'),
-            yaxis=dict(gridcolor='#E2E8F0'),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
-        # 添加机会区域标注
-        fig_bubble.add_vrect(x0=10, x1=30, fillcolor=COLORS['warning'], opacity=0.05, line_width=0,
-                           annotation_text="Opportunity Zone", annotation_position="top left")
-        st.plotly_chart(fig_bubble, use_container_width=True)
-        
-        # Top关键词表格
-        st.markdown("#### 🏆 Top Performing Keywords")
-        df_top_kw = df_kw_agg.nlargest(15, 'clicks')[['query', 'clicks', 'impressions', 'position', 'ctr', 'opportunity']]
-        df_top_kw.columns = ['Keyword', 'Clicks', 'Impressions', 'Avg Position', 'CTR', 'Status']
-        df_top_kw['CTR'] = df_top_kw['CTR'].apply(lambda x: f"{x*100:.2f}%" if x < 1 else f"{x:.2f}%")
-        df_top_kw['Avg Position'] = df_top_kw['Avg Position'].apply(lambda x: f"{x:.1f}")
-        st.dataframe(df_top_kw, use_container_width=True, hide_index=True)
-        
-        # Insight（建议5）
-        st.markdown(f"""
-        <div class="insight-card">
-            <div class="title">💡 KEY INSIGHT</div>
-            <div class="content">
-                <strong>{page1_opp} keywords</strong> are currently positioned between 11-30 (Page 2-3). 
-                These represent the highest ROI optimization targets — they already have search visibility 
-                but need content depth and internal linking improvements to break into Top 10.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+    with col2:
+        granularity = st.selectbox(t("granularity"), [t("daily"), t("weekly"), t("monthly")])
+    
+    # 过滤数据
+    if len(date_range) == 2:
+        mask = (df['data_date'].dt.date >= date_range[0]) & (df['data_date'].dt.date <= date_range[1])
+        df_filtered = df[mask].copy()
     else:
-        st.info("Keyword data not available. Please ensure `cleaned_by_query.csv` is in the data folder.")
-
-
-# ============================================================
-# Tab 3: Page Performance（建议4）
-# ============================================================
-with tab3:
-    if not data.get('by_page', pd.DataFrame()).empty:
-        df_p = data['by_page']
-        
-        st.markdown("### 📄 Page Performance")
-        
-        # 聚合页面数据
-        df_page_agg = df_p.groupby('page').agg({
-            'clicks': 'sum',
-            'impressions': 'sum',
-            'position': 'mean',
-            'ctr': 'mean'
-        }).reset_index()
-        
-        df_page_agg = df_page_agg[df_page_agg['impressions'] > 0]
-        
-        # Page Opportunity Matrix（建议4 - 四象限）
-        st.markdown("#### Page Opportunity Matrix")
-        st.caption("Identify pages with high impressions but low CTR — these are your quick wins")
-        
-        # 计算中位数作为分界线
-        imp_median = df_page_agg['impressions'].median()
-        ctr_median = df_page_agg['ctr'].median()
-        
-        # 定义象限
-        def get_quadrant(row):
-            high_imp = row['impressions'] >= imp_median
-            high_ctr = row['ctr'] >= ctr_median
-            if high_imp and high_ctr:
-                return '⭐ Maintain (High Imp + High CTR)'
-            elif high_imp and not high_ctr:
-                return '🚀 Optimize (High Imp + Low CTR)'
-            elif not high_imp and high_ctr:
-                return '📈 Grow (Low Imp + High CTR)'
-            else:
-                return '🔍 Improve (Low Imp + Low CTR)'
-        
-        df_page_agg['quadrant'] = df_page_agg.apply(get_quadrant, axis=1)
-        
-        # 简化页面URL显示
-        df_page_agg['page_short'] = df_page_agg['page'].apply(
-            lambda x: x.replace('https://www.advich.com/', '/') if isinstance(x, str) else x
-        )
-        
-        quadrant_colors = {
-            '⭐ Maintain (High Imp + High CTR)': COLORS['success'],
-            '🚀 Optimize (High Imp + Low CTR)': COLORS['danger'],
-            '📈 Grow (Low Imp + High CTR)': COLORS['secondary'],
-            '🔍 Improve (Low Imp + Low CTR)': COLORS['muted']
-        }
-        
-        fig_matrix = px.scatter(
-            df_page_agg,
-            x='impressions',
-            y='ctr',
-            color='quadrant',
-            color_discrete_map=quadrant_colors,
-            hover_data=['page_short', 'clicks', 'position'],
-            size='clicks' if df_page_agg['clicks'].sum() > 0 else 'impressions',
-            size_max=30
-        )
-        
-        # 添加分界线
-        fig_matrix.add_hline(y=ctr_median, line_dash="dash", line_color="#94A3B8", opacity=0.5)
-        fig_matrix.add_vline(x=imp_median, line_dash="dash", line_color="#94A3B8", opacity=0.5)
-        
-        fig_matrix.update_layout(
-            height=500,
-            xaxis_title="Impressions →",
-            yaxis_title="CTR →",
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            xaxis=dict(gridcolor='#E2E8F0'),
-            yaxis=dict(gridcolor='#E2E8F0'),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
-        st.plotly_chart(fig_matrix, use_container_width=True)
-        
-        # 页面健康度统计
-        st.markdown("#### Page Health Summary")
-        quad_counts = df_page_agg['quadrant'].value_counts()
-        
-        q_col1, q_col2, q_col3, q_col4 = st.columns(4)
-        quadrant_labels = [
-            ('⭐ Maintain (High Imp + High CTR)', '⭐ Maintain', COLORS['success']),
-            ('🚀 Optimize (High Imp + Low CTR)', '🚀 Optimize', COLORS['danger']),
-            ('📈 Grow (Low Imp + High CTR)', '📈 Grow', COLORS['secondary']),
-            ('🔍 Improve (Low Imp + Low CTR)', '🔍 Improve', COLORS['muted'])
-        ]
-        
-        for col, (key, label, color) in zip([q_col1, q_col2, q_col3, q_col4], quadrant_labels):
-            count = quad_counts.get(key, 0)
-            with col:
-                st.markdown(f"""
-                <div class="kpi-card" style="border-top-color: {color};">
-                    <h3>{label}</h3>
-                    <div class="value">{count}</div>
-                </div>
-                """, unsafe_allow_html=True)
-        
-        # Top Pages表格
-        st.markdown("#### 🏆 Top Pages by Traffic")
-        df_top_pages = df_page_agg.nlargest(10, 'clicks')[['page_short', 'clicks', 'impressions', 'position', 'ctr', 'quadrant']]
-        df_top_pages.columns = ['Page', 'Clicks', 'Impressions', 'Avg Position', 'CTR', 'Status']
-        df_top_pages['CTR'] = df_top_pages['CTR'].apply(lambda x: f"{x*100:.2f}%" if x < 1 else f"{x:.2f}%")
-        df_top_pages['Avg Position'] = df_top_pages['Avg Position'].apply(lambda x: f"{x:.1f}")
-        st.dataframe(df_top_pages, use_container_width=True, hide_index=True)
-        
-        # Insight（建议5）
-        optimize_count = quad_counts.get('🚀 Optimize (High Imp + Low CTR)', 0)
-        st.markdown(f"""
-        <div class="insight-card">
-            <div class="title">💡 KEY INSIGHT</div>
-            <div class="content">
-                <strong>{optimize_count} pages</strong> have high impressions but low CTR — these are your 
-                highest-priority optimization targets. Improving title tags and meta descriptions for these 
-                pages could significantly increase click-through rates without needing additional content.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        df_filtered = df.copy()
+    
+    # 按粒度聚合
+    if granularity == t("weekly"):
+        df_filtered['period'] = df_filtered['data_date'].dt.to_period('W').apply(lambda r: r.start_time)
+        df_agg = df_filtered.groupby('period').agg({'clicks': 'sum', 'impressions': 'sum', 'ctr': 'mean', 'position': 'mean'}).reset_index()
+        df_agg.rename(columns={'period': 'data_date'}, inplace=True)
+    elif granularity == t("monthly"):
+        df_filtered['period'] = df_filtered['data_date'].dt.to_period('M').apply(lambda r: r.start_time)
+        df_agg = df_filtered.groupby('period').agg({'clicks': 'sum', 'impressions': 'sum', 'ctr': 'mean', 'position': 'mean'}).reset_index()
+        df_agg.rename(columns={'period': 'data_date'}, inplace=True)
     else:
-        st.info("Page data not available. Please ensure `cleaned_by_page.csv` is in the data folder.")
+        df_agg = df_filtered
+    
+    # 点击 & 展示趋势图
+    st.subheader(t("click_impression_trend"))
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(
+        go.Bar(x=df_agg['data_date'], y=df_agg['impressions'], name=t('impressions'), marker_color='rgba(102, 126, 234, 0.6)'),
+        secondary_y=False
+    )
+    fig.add_trace(
+        go.Scatter(x=df_agg['data_date'], y=df_agg['clicks'], name=t('clicks'), line=dict(color='#e74c3c', width=2), mode='lines+markers'),
+        secondary_y=True
+    )
+    fig.update_layout(height=400, hovermode='x unified')
+    fig.update_yaxes(title_text=t('impressions'), secondary_y=False)
+    fig.update_yaxes(title_text=t('clicks'), secondary_y=True)
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # CTR & 排名趋势
+    st.subheader(t("ctr_position_trend"))
+    fig2 = make_subplots(specs=[[{"secondary_y": True}]])
+    ctr_display = df_agg['ctr'] * 100 if df_agg['ctr'].max() < 1 else df_agg['ctr']
+    fig2.add_trace(
+        go.Scatter(x=df_agg['data_date'], y=ctr_display, name='CTR (%)', line=dict(color='#2ecc71', width=2), mode='lines+markers'),
+        secondary_y=False
+    )
+    fig2.add_trace(
+        go.Scatter(x=df_agg['data_date'], y=df_agg['position'], name=t('position'), line=dict(color='#9b59b6', width=2), mode='lines+markers'),
+        secondary_y=True
+    )
+    fig2.update_layout(height=400, hovermode='x unified')
+    fig2.update_yaxes(title_text='CTR (%)', secondary_y=False)
+    fig2.update_yaxes(title_text=t('position'), autorange='reversed', secondary_y=True)
+    st.plotly_chart(fig2, use_container_width=True)
 
 
-# ============================================================
-# Tab 4: Market Expansion（建议9）
-# ============================================================
-with tab4:
-    if not data.get('by_country', pd.DataFrame()).empty:
-        df_c = data['by_country']
-        
-        st.markdown("### 🌍 Market Expansion")
-        
-        # 聚合国家数据
-        df_country_agg = df_c.groupby('country').agg({
-            'clicks': 'sum',
-            'impressions': 'sum',
-            'position': 'mean',
-            'ctr': 'mean'
-        }).reset_index()
-        
-        df_country_agg = df_country_agg[df_country_agg['impressions'] > 0]
-        
-        # 国家代码映射（ISO 3166-1 alpha-3）
-        country_map = {
-            'usa': 'USA', 'chn': 'CHN', 'hkg': 'HKG', 'twn': 'TWN',
-            'sgp': 'SGP', 'jpn': 'JPN', 'gbr': 'GBR', 'deu': 'DEU',
-            'can': 'CAN', 'aus': 'AUS', 'ind': 'IND', 'mys': 'MYS',
-            'tha': 'THA', 'kor': 'KOR', 'fra': 'FRA', 'bra': 'BRA',
-            'idn': 'IDN', 'vnm': 'VNM', 'phl': 'PHL', 'nld': 'NLD',
-            'ita': 'ITA', 'esp': 'ESP', 'mex': 'MEX', 'arg': 'ARG',
-            'col': 'COL', 'chl': 'CHL', 'per': 'PER', 'nzl': 'NZL',
-            'irl': 'IRL', 'che': 'CHE', 'aut': 'AUT', 'bel': 'BEL',
-            'swe': 'SWE', 'nor': 'NOR', 'dnk': 'DNK', 'fin': 'FIN',
-            'pol': 'POL', 'tur': 'TUR', 'zaf': 'ZAF', 'egy': 'EGY',
-            'sau': 'SAU', 'are': 'ARE', 'isr': 'ISR', 'rus': 'RUS',
-            'ukr': 'UKR', 'pak': 'PAK', 'bgd': 'BGD', 'lka': 'LKA',
-            'mmr': 'MMR', 'khm': 'KHM', 'mac': 'MAC'
-        }
-        
-        df_country_agg['iso_alpha'] = df_country_agg['country'].map(country_map)
-        df_country_agg['iso_alpha'] = df_country_agg['iso_alpha'].fillna(df_country_agg['country'].str.upper())
-        
-        # 世界地图（建议9）
-        st.markdown("#### Global Search Visibility")
-        
-        fig_map = px.choropleth(
-            df_country_agg,
-            locations='iso_alpha',
-            color='impressions',
-            hover_name='country',
-            hover_data=['clicks', 'impressions', 'position'],
-            color_continuous_scale=[
-                [0, '#EFF6FF'],
-                [0.3, '#93C5FD'],
-                [0.6, '#3B82F6'],
-                [1, '#1E3A8A']
-            ],
-            title=""
-        )
-        fig_map.update_layout(
-            height=400,
-            margin=dict(l=0, r=0, t=0, b=0),
-            paper_bgcolor='rgba(0,0,0,0)',
-            geo=dict(
-                showframe=False,
-                showcoastlines=True,
-                coastlinecolor='#CBD5E1',
-                bgcolor='rgba(0,0,0,0)'
-            )
-        )
-        st.plotly_chart(fig_map, use_container_width=True)
-        
-        # Market Matrix
-        st.markdown("#### Market Performance Matrix")
-        
-        # Top 15 国家
-        df_top_countries = df_country_agg.nlargest(15, 'impressions')
-        
-        fig_market = px.scatter(
-            df_top_countries,
-            x='impressions',
-            y='clicks',
-            size='impressions',
-            color='position',
-            color_continuous_scale=[[0, COLORS['success']], [0.5, COLORS['warning']], [1, COLORS['danger']]],
-            hover_data=['country'],
-            text='country',
-            size_max=50
-        )
-        fig_market.update_traces(textposition='top center')
-        fig_market.update_layout(
-            height=400,
-            xaxis_title="Impressions (Search Visibility) →",
-            yaxis_title="Clicks (Engagement) →",
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            xaxis=dict(gridcolor='#E2E8F0'),
-            yaxis=dict(gridcolor='#E2E8F0')
-        )
-        st.plotly_chart(fig_market, use_container_width=True)
-        
-        # 国家排名表
-        st.markdown("#### 🏆 Top Markets")
-        df_market_table = df_country_agg.nlargest(10, 'clicks')[['country', 'clicks', 'impressions', 'position', 'ctr']]
-        df_market_table.columns = ['Country', 'Clicks', 'Impressions', 'Avg Position', 'CTR']
-        df_market_table['CTR'] = df_market_table['CTR'].apply(lambda x: f"{x*100:.2f}%" if x < 1 else f"{x:.2f}%")
-        df_market_table['Avg Position'] = df_market_table['Avg Position'].apply(lambda x: f"{x:.1f}")
-        st.dataframe(df_market_table, use_container_width=True, hide_index=True)
-        
-        # 设备分布
-        st.markdown("---")
-        st.markdown("#### 📱 Device Distribution")
-        
-        if not data.get('by_device', pd.DataFrame()).empty:
-            df_d = data['by_device']
-            df_device_agg = df_d.groupby('device').agg({
-                'clicks': 'sum',
-                'impressions': 'sum'
-            }).reset_index()
-            
-            dev_col1, dev_col2 = st.columns(2)
-            
-            with dev_col1:
-                fig_dev = px.pie(
-                    df_device_agg,
-                    values='impressions',
-                    names='device',
-                    color_discrete_sequence=[COLORS['primary'], COLORS['secondary'], COLORS['muted']],
-                    hole=0.4
-                )
-                fig_dev.update_layout(
-                    height=300,
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    title="Impressions by Device"
-                )
-                st.plotly_chart(fig_dev, use_container_width=True)
-            
-            with dev_col2:
-                fig_dev_clicks = px.pie(
-                    df_device_agg,
-                    values='clicks',
-                    names='device',
-                    color_discrete_sequence=[COLORS['primary'], COLORS['secondary'], COLORS['muted']],
-                    hole=0.4
-                )
-                fig_dev_clicks.update_layout(
-                    height=300,
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    title="Clicks by Device"
-                )
-                st.plotly_chart(fig_dev_clicks, use_container_width=True)
-        
-        # Insight（建议5）
-        top_country = df_country_agg.nlargest(1, 'impressions')['country'].values[0] if len(df_country_agg) > 0 else "N/A"
-        st.markdown(f"""
-        <div class="insight-card">
-            <div class="title">💡 KEY INSIGHT</div>
-            <div class="content">
-                Primary market is <strong>{top_country.upper()}</strong> with the highest search visibility. 
-                Asian markets (CHN, HKG, TWN, SGP) show higher CTR rates (1.6-5%) compared to Western markets, 
-                indicating stronger brand recognition in the Asia-Pacific region.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.info("Country data not available. Please ensure `cleaned_by_country.csv` is in the data folder.")
-
-
-# ============================================================
-# Tab 5: Recommendations（建议10 - AI SEO Consultant）
-# ============================================================
-with tab5:
-    st.markdown("### 🤖 AI SEO Consultant")
-    st.markdown("*Automated recommendations based on your data analysis*")
+def render_page_effectiveness():
+    """页面效果分析"""
+    st.markdown(f'<div class="main-header">{t("page_title")}</div>', unsafe_allow_html=True)
     
-    st.markdown("<br>", unsafe_allow_html=True)
+    df = data.get('query_page')
+    if df is None:
+        df = data.get('by_page')
     
-    # Priority 1
-    st.markdown(f"""
-    <div class="ai-card">
-        <div class="priority">🎯 PRIORITY 1 — Keyword Optimization</div>
-        <div class="action">
-            Optimize <strong>{metrics['opportunity_keywords']} keywords</strong> currently ranking between position 11-30. 
-            Focus on improving content depth, adding internal links, and optimizing title tags for these terms.
-        </div>
-        <div class="impact">Expected Impact: HIGH · Estimated Traffic Increase: 40-60%</div>
-    </div>
-    """, unsafe_allow_html=True)
+    if df is None or 'page' not in df.columns:
+        st.warning(t("no_data"))
+        return
     
-    # Priority 2
-    pages_no_clicks = metrics['total_pages'] - metrics['pages_with_clicks']
-    st.markdown(f"""
-    <div class="ai-card">
-        <div class="priority">📄 PRIORITY 2 — Page CTR Improvement</div>
-        <div class="action">
-            <strong>{pages_no_clicks} pages</strong> have impressions but zero clicks. 
-            Rewrite meta titles and descriptions to improve click-through rates. 
-            Focus on pages with highest impressions first.
-        </div>
-        <div class="impact">Expected Impact: MEDIUM-HIGH · Quick Win: 2-4 weeks</div>
-    </div>
-    """, unsafe_allow_html=True)
+    # 按页面聚合
+    page_stats = df.groupby('page').agg({
+        'clicks': 'sum',
+        'impressions': 'sum',
+        'ctr': 'mean',
+        'position': 'mean'
+    }).reset_index()
     
-    # Priority 3
-    st.markdown(f"""
-    <div class="ai-card">
-        <div class="priority">🌍 PRIORITY 3 — Market Expansion</div>
-        <div class="action">
-            Current presence in <strong>{metrics['total_countries']} markets</strong>. 
-            Focus content localization efforts on high-impression, low-CTR markets. 
-            Consider creating region-specific landing pages for top 5 markets.
-        </div>
-        <div class="impact">Expected Impact: MEDIUM · Timeline: 1-3 months</div>
-    </div>
-    """, unsafe_allow_html=True)
+    # 页面机会矩阵
+    st.subheader(t("page_opportunity"))
     
-    # Priority 4
-    st.markdown(f"""
-    <div class="ai-card">
-        <div class="priority">📊 PRIORITY 4 — Content Gap Analysis</div>
-        <div class="action">
-            <strong>{metrics['long_tail']} keywords</strong> are ranking beyond position 30. 
-            Identify content gaps and create comprehensive pillar pages targeting 
-            high-volume keywords in this segment.
-        </div>
-        <div class="impact">Expected Impact: MEDIUM · Timeline: 2-4 months</div>
-    </div>
-    """, unsafe_allow_html=True)
+    imp_median = page_stats['impressions'].median()
+    click_median = page_stats['clicks'].median()
     
-    # Priority 5
-    st.markdown(f"""
-    <div class="ai-card">
-        <div class="priority">⚡ PRIORITY 5 — Technical SEO</div>
-        <div class="action">
-            Average position is <strong>{metrics['avg_position']:.1f}</strong> (target: below 20). 
-            Audit site speed, mobile usability, and Core Web Vitals. 
-            Ensure all high-priority pages are properly indexed and crawlable.
-        </div>
-        <div class="impact">Expected Impact: MEDIUM · Foundation for all other improvements</div>
-    </div>
-    """, unsafe_allow_html=True)
+    def classify_page(row):
+        high_imp = row['impressions'] > imp_median
+        high_click = row['clicks'] > click_median
+        if high_imp and not high_click:
+            return t('high_imp_low_click')
+        elif high_imp and high_click:
+            return t('high_imp_high_click')
+        elif not high_imp and high_click:
+            return t('low_imp_high_click')
+        else:
+            return t('low_imp_low_click')
     
+    page_stats['opportunity'] = page_stats.apply(classify_page, axis=1)
+    
+    # 散点图
+    fig = px.scatter(
+        page_stats,
+        x='impressions',
+        y='clicks',
+        color='opportunity',
+        hover_data=['page', 'ctr', 'position'],
+        size='impressions',
+        size_max=30,
+        height=500
+    )
+    fig.update_layout(xaxis_title=t('impressions'), yaxis_title=t('clicks'))
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # 机会分类统计
+    col1, col2, col3, col4 = st.columns(4)
+    opportunity_counts = page_stats['opportunity'].value_counts()
+    
+    with col1:
+        count = opportunity_counts.get(t('high_imp_low_click'), 0)
+        st.metric(t('high_imp_low_click'), count)
+    with col2:
+        count = opportunity_counts.get(t('high_imp_high_click'), 0)
+        st.metric(t('high_imp_high_click'), count)
+    with col3:
+        count = opportunity_counts.get(t('low_imp_high_click'), 0)
+        st.metric(t('low_imp_high_click'), count)
+    with col4:
+        count = opportunity_counts.get(t('low_imp_low_click'), 0)
+        st.metric(t('low_imp_low_click'), count)
+    
+    # Top 页面表格
     st.markdown("---")
+    st.subheader(t("top_pages"))
+    top_pages = page_stats.nlargest(20, 'impressions')[['page', 'clicks', 'impressions', 'ctr', 'position', 'opportunity']]
+    top_pages.columns = [t('page_url'), t('clicks'), t('impressions'), 'CTR', t('position'), t('opportunity_type')]
+    st.dataframe(top_pages, use_container_width=True, hide_index=True)
+
+
+def render_country():
+    """国家/地区分析"""
+    st.markdown(f'<div class="main-header">{t("country_title")}</div>', unsafe_allow_html=True)
     
-    # ROI预估
-    st.markdown("### 📈 Projected Impact")
+    df = data.get('by_country')
+    if df is None:
+        st.warning(t("no_data"))
+        return
     
-    roi_col1, roi_col2, roi_col3 = st.columns(3)
+    # 按国家聚合
+    country_stats = df.groupby('country').agg({
+        'clicks': 'sum',
+        'impressions': 'sum',
+        'ctr': 'mean',
+        'position': 'mean'
+    }).reset_index()
     
-    with roi_col1:
-        projected_clicks = int(metrics['total_clicks'] * 1.5)
-        st.markdown(f"""
-        <div class="kpi-card" style="border-top-color: {COLORS['success']};">
-            <h3>Projected Monthly Clicks</h3>
-            <div class="value" style="color: {COLORS['success']};">{projected_clicks:,}</div>
-            <p style="color: {COLORS['muted']}; font-size: 0.8rem;">+50% with Priority 1-2</p>
-        </div>
-        """, unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
     
-    with roi_col2:
-        projected_ctr = min(metrics['avg_ctr'] * 2, 5.0)
-        st.markdown(f"""
-        <div class="kpi-card" style="border-top-color: {COLORS['success']};">
-            <h3>Projected CTR</h3>
-            <div class="value" style="color: {COLORS['success']};">{projected_ctr:.2f}%</div>
-            <p style="color: {COLORS['muted']}; font-size: 0.8rem;">Industry avg: 3-5%</p>
-        </div>
-        """, unsafe_allow_html=True)
+    with col1:
+        st.subheader(t("top_countries_clicks"))
+        top_clicks = country_stats.nlargest(15, 'clicks')
+        fig = px.bar(top_clicks, x='country', y='clicks', color='clicks',
+                     color_continuous_scale='Viridis', height=400)
+        st.plotly_chart(fig, use_container_width=True)
     
-    with roi_col3:
-        projected_score = min(overall_score + 15, 95)
-        st.markdown(f"""
-        <div class="kpi-card" style="border-top-color: {COLORS['success']};">
-            <h3>Projected Health Score</h3>
-            <div class="value" style="color: {COLORS['success']};">{projected_score:.0f}</div>
-            <p style="color: {COLORS['muted']}; font-size: 0.8rem;">Target: 85+ (Grade A)</p>
-        </div>
-        """, unsafe_allow_html=True)
+    with col2:
+        st.subheader(t("top_countries_impressions"))
+        top_imp = country_stats.nlargest(15, 'impressions')
+        fig = px.bar(top_imp, x='country', y='impressions', color='impressions',
+                     color_continuous_scale='Plasma', height=400)
+        st.plotly_chart(fig, use_container_width=True)
     
-    # Final Insight
-    st.markdown(f"""
-    <div class="insight-card">
-        <div class="title">💡 STRATEGIC SUMMARY</div>
-        <div class="content">
-            The website's SEO foundation is established with <strong>{metrics['total_keywords']:,} tracked keywords</strong> 
-            across <strong>{metrics['total_countries']} markets</strong>. The primary growth lever is converting 
-            existing Page 2-3 rankings into Page 1 positions. This "low-hanging fruit" strategy offers the 
-            highest ROI with minimal content investment. Focus execution on Priority 1 and 2 for immediate results.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # 详细数据表
+    st.markdown("---")
+    st.subheader(t("country_detail"))
+    display_df = country_stats.nlargest(30, 'impressions').round(3)
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
+
+
+def render_device():
+    """设备分布"""
+    st.markdown(f'<div class="main-header">{t("device_title")}</div>', unsafe_allow_html=True)
+    
+    df = data.get('by_device')
+    if df is None:
+        st.warning(t("no_data"))
+        return
+    
+    # 按设备聚合
+    device_stats = df.groupby('device').agg({
+        'clicks': 'sum',
+        'impressions': 'sum',
+        'ctr': 'mean',
+        'position': 'mean'
+    }).reset_index()
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader(t("device_clicks"))
+        fig = px.pie(device_stats, values='clicks', names='device', 
+                     color_discrete_sequence=['#667eea', '#764ba2', '#f093fb'],
+                     height=350)
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        st.subheader(t("device_impressions"))
+        fig = px.pie(device_stats, values='impressions', names='device',
+                     color_discrete_sequence=['#4facfe', '#00f2fe', '#43e97b'],
+                     height=350)
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # CTR 对比
+    st.subheader(t("device_ctr_compare"))
+    ctr_display = device_stats.copy()
+    ctr_display['ctr_pct'] = ctr_display['ctr'] * 100 if ctr_display['ctr'].max() < 1 else ctr_display['ctr']
+    fig = px.bar(ctr_display, x='device', y='ctr_pct', color='device',
+                 color_discrete_sequence=['#667eea', '#764ba2', '#f093fb'],
+                 height=350)
+    fig.update_yaxes(title_text='CTR (%)')
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # 设备趋势
+    st.subheader(t("device_trend"))
+    df_sorted = df.sort_values('data_date')
+    fig = px.line(df_sorted, x='data_date', y='impressions', color='device',
+                  markers=True, height=400)
+    fig.update_layout(xaxis_title='', yaxis_title=t('impressions'))
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def render_anomaly():
+    """流量异常检测"""
+    st.markdown(f'<div class="main-header">{t("anomaly_title")}</div>', unsafe_allow_html=True)
+    
+    df = data.get('by_date')
+    if df is None:
+        st.warning(t("no_data"))
+        return
+    
+    df = df.sort_values('data_date').copy()
+    
+    # 检测参数
+    col1, col2 = st.columns(2)
+    with col1:
+        method = st.selectbox(t("anomaly_method"), [t("zscore"), t("iqr"), t("rolling")])
+    with col2:
+        sensitivity = st.slider(t("sensitivity"), 1.0, 3.0, 2.0, 0.1)
+    
+    # 异常检测算法
+    if method == t("zscore"):
+        mean_val = df['clicks'].mean()
+        std_val = df['clicks'].std()
+        df['is_anomaly'] = abs(df['clicks'] - mean_val) > sensitivity * std_val
+    elif method == t("iqr"):
+        Q1 = df['clicks'].quantile(0.25)
+        Q3 = df['clicks'].quantile(0.75)
+        IQR = Q3 - Q1
+        lower = Q1 - sensitivity * IQR
+        upper = Q3 + sensitivity * IQR
+        df['is_anomaly'] = (df['clicks'] < lower) | (df['clicks'] > upper)
+    else:  # rolling
+        window = 7
+        rolling_mean = df['clicks'].rolling(window=window, center=True).mean()
+        rolling_std = df['clicks'].rolling(window=window, center=True).std()
+        df['is_anomaly'] = abs(df['clicks'] - rolling_mean) > sensitivity * rolling_std
+        df['is_anomaly'] = df['is_anomaly'].fillna(False)
+    
+    anomaly_count = df['is_anomaly'].sum()
+    st.metric(t("anomaly_count"), int(anomaly_count))
+    
+    # 可视化
+    st.subheader(t("anomaly_results"))
+    fig = go.Figure()
+    
+    # 正常点
+    normal = df[~df['is_anomaly']]
+    fig.add_trace(go.Scatter(
+        x=normal['data_date'], y=normal['clicks'],
+        mode='lines+markers', name=t('clicks'),
+        line=dict(color='#667eea'), marker=dict(size=4)
+    ))
+    
+    # 异常点
+    anomalies = df[df['is_anomaly']]
+    fig.add_trace(go.Scatter(
+        x=anomalies['data_date'], y=anomalies['clicks'],
+        mode='markers', name='Anomaly',
+        marker=dict(color='red', size=12, symbol='x')
+    ))
+    
+    fig.update_layout(height=450, hovermode='x unified')
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # 异常详情
+    if anomaly_count > 0:
+        st.subheader(t("anomaly_detail"))
+        anomaly_df = anomalies[['data_date', 'clicks', 'impressions', 'ctr', 'position']].copy()
+        anomaly_df.columns = ['Date', t('clicks'), t('impressions'), 'CTR', t('position')]
+        st.dataframe(anomaly_df, use_container_width=True, hide_index=True)
+
 
 # ============================================================
-# Footer
+# 主路由
 # ============================================================
-st.markdown("---")
-st.markdown(f"""
-<div style="text-align: center; color: {COLORS['muted']}; font-size: 0.8rem; padding: 1rem;">
-    SEO Health Analytics v2.0 · Powered by Google Search Console Data · Built with Streamlit<br>
-    Data Range: 2025-04-03 to 2026-07-25 · Last Updated: 2026-07-27
-</div>
-""", unsafe_allow_html=True)
+if page == t('nav_overview'):
+    render_overview()
+elif page == t('nav_health'):
+    render_health_score()
+elif page == t('nav_search'):
+    render_search_trends()
+elif page == t('nav_page'):
+    render_page_effectiveness()
+elif page == t('nav_country'):
+    render_country()
+elif page == t('nav_device'):
+    render_device()
+elif page == t('nav_anomaly'):
+    render_anomaly()
 
