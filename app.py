@@ -4,6 +4,18 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+# ===== 调试代码（定位路径问题后删除）=====
+st.sidebar.write("当前工作目录:", os.getcwd())
+st.sidebar.write("目录内容:", os.listdir("."))
+if os.path.exists("data"):
+    st.sidebar.write("data/ 内容:", os.listdir("data"))
+else:
+    st.sidebar.write("⚠️ data/ 文件夹不存在！")
+    for item in os.listdir("."):
+        if os.path.isdir(item):
+            st.sidebar.write(f"📁 {item}/:", os.listdir(item))
+# ===== 调试代码结束 =====
+
 
 # ==================== 页面配置 ====================
 st.set_page_config(
