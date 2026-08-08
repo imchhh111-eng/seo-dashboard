@@ -878,6 +878,191 @@ elif page == t['nav_anomaly']:
 
             # 异常可视化
             fig = go.Figure()
+            # 异常可视化（接在 fig = go.Figure() 之后）
             normal = df[~df['is_anomaly']]
-            anomaly = df[df['
+            anomaly = df[df['is_anomaly']]
+
+            fig.add_trace(go.Scatter(
+                x=normal['data_date'], y=normal[metric_col],
+                mode='lines', name='Normal',
+                line=dict(color=C['blue'], width=1.5)
+            ))
+            fig.add_trace(go.Scatter(
+                x=anomaly['data_date'], y=anomaly[metric_col],
+                mode='markers', name='Anomaly',
+                marker=dict(color=C['red'], size=10, symbol='x')
+            ))
+            fig.add_trace(go.Scatter(
+                x=df['data_date'], y=df['rolling_mean'],
+                mode='lines', name='7-day MA',
+                line=dict(color=C['gray_400'], width=1, dash='dash')
+            ))
+            fig.update_layout(height=340, xaxis_title="", yaxis_title=metric_col)
+            st.plotly_chart(fig, use_container_width=True, key="anomaly_chart")
+
+            # 异常点列表
+            if anomaly_count > 0:
+                st.markdown(f"<div class='card-title'>📋 ANOMALY DETAILS</div>", unsafe_allow_html=True)
+                anomaly_display = df[df['is_anomaly']][['data_date', metric_col, 'rolling_mean', 'z_score']].copy()
+                anomaly_display['data_date'] = anomaly_display['data_date'].dt.strftime('%Y-%m-%d')
+                anomaly_display['z_score'] = anomaly_display['z_score'].round(2)
+                anomaly_display['rolling_mean'] = anomaly_display['rolling_mean'].round(2)
+                anomaly_display.columns = ['Date', 'Value', '7-day Avg', 'Z-Score']
+                st.dataframe(anomaly_display, use_container_width=True, hide_index=True, height=250)
+                csv_export(anomaly_display, "anomaly_details.csv")
+        else:
+            empty_state("🚨", t['no_data'])
+    else:
+        empty_state("🚨", t['no_data_desc'])
+
+# ============================================================
+# 页面9：优化建议
+# ============================================================
+elif page == t['nav_recommend']:
+    st.markdown(f"<div class='card'><div class='card-title'>💡 {t['rec_title']}</div></div>", unsafe_allow_html=True)
+
+    recommendations = []
+
+    # 基于评分生成建议
+    if health['search'] < 70:
+        if lang == '中文':
+            recommendations.append({
+                'priority': 'P0', 'category': '搜索表现',
+                'issue': f"搜索表现得分偏低（{health['search']}分）",
+                'action': '优化排名11-20的关键词，提升至Top 10；改善标题和描述以提高CTR',
+                'impact': '高'
+            })
+        else:
+            recommendations.append({
+                'priority': 'P0', 'category': 'Search Performance',
+                'issue': f"Search performance score low ({health['search']})",
+                'action': 'Optimize keywords ranked 11-20 to Top 10; improve titles/descriptions for CTR',
+                'impact': 'High'
+            })
+
+    if health['content'] < 70:
+        if lang == '中文':
+            recommendations.append({
+                'priority': 'P1', 'category': '内容效果',
+                'issue': f"内容效果得分偏低（{health['content']}分）",
+                'action': '增加高质量内容页面，提升页面活跃率；拓展更多长尾关键词覆盖',
+                'impact': '中高'
+            })
+        else:
+            recommendations.append({
+                'priority': 'P1', 'category': 'Content Effectiveness',
+                'issue': f"Content score low ({health['content']})",
+                'action': 'Add quality content pages; expand long-tail keyword coverage',
+                'impact': 'Medium-High'
+            })
+
+    if health['tech'] < 70:
+        if lang == '中文':
+            recommendations.append({
+                'priority': 'P1', 'category': '技术体验',
+                'issue': f"技术体验得分偏低（{health['tech']}分）",
+                'action': '确保移动端适配良好；提升页面加载速度；修复爬取错误',
+                'impact': '中'
+            })
+        else:
+            recommendations.append({
+                'priority': 'P1', 'category': 'Technical Experience',
+                'issue': f"Technical score low ({health['tech']})",
+                'action': 'Ensure mobile-friendly; improve page speed; fix crawl errors',
+                'impact': 'Medium'
+            })
+
+    # 基于数据生成建议
+    if data.get('daily_summary') is not None:
+        df_s = data['daily_summary'].sort_values('data_date')
+        if len(df_s) >= 6:
+            recent = df_s.tail(len(df_s) // 3)['clicks'].mean()
+            earlier = df_s.head(len(df_s) // 3)['clicks'].mean()
+            if earlier > 0 and recent / earlier < 0.8:
+                if lang == '中文':
+                    recommendations.append({
+                        'priority': 'P0', 'category': '流量趋势',
+                        'issue': f"点击量呈下降趋势（近期较早期下降{(1-recent/earlier)*100:.0f}%）",
+                        'action': '排查排名下降的关键词；检查是否有算法更新影响；增加新内容发布频率',
+                        'impact': '高'
+                    })
+                else:
+                    recommendations.append({
+                        'priority': 'P0', 'category': 'Traffic Trend',
+                        'issue': f"Click trend declining ({(1-recent/earlier)*100:.0f}% drop)",
+                        'action': 'Investigate ranking drops; check algorithm updates; increase content frequency',
+                        'impact': 'High'
+                    })
+
+    if data.get('by_query') is not None:
+        df_q = data['by_query']
+        kw_agg = df_q.groupby('query').agg({'clicks': 'sum', 'impressions': 'sum', 'position': 'mean'}).reset_index()
+        kw_agg['ctr'] = kw_agg['clicks'] / kw_agg['impressions'].replace(0, 1)
+        opp_count = len(kw_agg[(kw_agg['impressions'] >= 10) & (kw_agg['ctr'] < 0.02) & (kw_agg['position'] >= 11) & (kw_agg['position'] <= 30)])
+        if opp_count > 0:
+            if lang == '中文':
+                recommendations.append({
+                    'priority': 'P1', 'category': '关键词优化',
+                    'issue': f"发现 {opp_count} 个机会关键词（高展示+低CTR+排名11-30）",
+                    'action': '针对这些关键词优化页面内容、标题标签和内链结构，争取进入Top 10',
+                    'impact': '中高'
+                })
+            else:
+                recommendations.append({
+                    'priority': 'P1', 'category': 'Keyword Optimization',
+                    'issue': f"Found {opp_count} opportunity keywords (high imp + low CTR + pos 11-30)",
+                    'action': 'Optimize content, title tags, and internal links for these keywords to reach Top 10',
+                    'impact': 'Medium-High'
+                })
+
+    if data.get('by_page') is not None:
+        df_p = data['by_page']
+        tp = df_p['page'].nunique()
+        ap = df_p[df_p['clicks'] > 0]['page'].nunique()
+        inactive_rate = (1 - ap / tp) * 100 if tp > 0 else 0
+        if inactive_rate > 50:
+            if lang == '中文':
+                recommendations.append({
+                    'priority': 'P2', 'category': '页面优化',
+                    'issue': f"{inactive_rate:.0f}% 的页面零点击（{tp-ap}/{tp}个页面）",
+                    'action': '审查零点击页面，合并低质量内容，301重定向无效页面，集中权重到核心页面',
+                    'impact': '中'
+                })
+            else:
+                recommendations.append({
+                    'priority': 'P2', 'category': 'Page Optimization',
+                    'issue': f"{inactive_rate:.0f}% pages have zero clicks ({tp-ap}/{tp})",
+                    'action': 'Audit zero-click pages; consolidate thin content; 301 redirect; focus authority',
+                    'impact': 'Medium'
+                })
+
+    # 显示建议
+    if recommendations:
+        # 按优先级排序
+        priority_order = {'P0': 0, 'P1': 1, 'P2': 2}
+        recommendations.sort(key=lambda x: priority_order.get(x['priority'], 99))
+
+        for i, rec in enumerate(recommendations):
+            p_color = C['red'] if rec['priority'] == 'P0' else C['amber'] if rec['priority'] == 'P1' else C['blue']
+            impact_label = rec['impact']
+            st.markdown(f"""
+            <div class='card'>
+                <div style='display:flex; align-items:center; gap:8px; margin-bottom:8px;'>
+                    <span style='background:{p_color}; color:white; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700;'>{rec['priority']}</span>
+                    <span style='font-size:11px; color:{C["gray_500"]}; font-weight:500;'>{rec['category']}</span>
+                    <span style='margin-left:auto; font-size:10px; color:{p_color}; font-weight:600;'>Impact: {impact_label}</span>
+                </div>
+                <div style='font-size:14px; font-weight:600; color:{C["gray_900"]}; margin-bottom:6px;'>{rec['issue']}</div>
+                <div style='font-size:13px; color:{C["gray_700"]}; line-height:1.5;'>👉 {rec['action']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.success("🎉 所有维度表现良好，暂无紧急优化建议！" if lang == '中文' else "🎉 All dimensions performing well!")
+
+    # 外链权威预留说明
+    st.markdown("<br>", unsafe_allow_html=True)
+    with st.expander(f"🔗 {t['backlink_reserved']}", expanded=False):
+        st.info(t['backlink_desc'])
+
+
 
