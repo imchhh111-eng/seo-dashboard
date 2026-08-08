@@ -1,20 +1,11 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-# ===== 调试代码（定位路径问题后删除）=====
-st.sidebar.write("当前工作目录:", os.getcwd())
-st.sidebar.write("目录内容:", os.listdir("."))
-if os.path.exists("data"):
-    st.sidebar.write("data/ 内容:", os.listdir("data"))
-else:
-    st.sidebar.write("⚠️ data/ 文件夹不存在！")
-    for item in os.listdir("."):
-        if os.path.isdir(item):
-            st.sidebar.write(f"📁 {item}/:", os.listdir(item))
-# ===== 调试代码结束 =====
+import os
 
 
 # ==================== 页面配置 ====================
@@ -29,7 +20,7 @@ st.set_page_config(
 @st.cache_data
 def load_data():
     """加载所有CSV数据文件"""
-    base_path = "data"
+    base_path = "data/"
 
     data = {}
     try:
@@ -108,6 +99,8 @@ if page == "📊 总览仪表盘":
         avg_ctr = df['clicks'].sum() / df['impressions'].sum() * 100 if df['impressions'].sum() > 0 else 0
         col3.metric("平均CTR", f"{avg_ctr:.2f}%")
         col4.metric("平均排名", f"{df['position'].mean():.1f}")
+    else:
+        st.warning("未找到数据文件，请检查 data/ 文件夹中是否包含 CSV 文件。")
 
     st.info("请从左侧导航菜单单选择具体分析模块")
 
@@ -148,18 +141,15 @@ elif page == "🏥 SEO 健康度评分":
         search_performance_score = (ctr_score * 0.4 + position_score * 0.35 + click_score * 0.25)
 
         # --- 内容质量维度 (30%) ---
-        # 关键词覆盖度
         unique_queries = df_query['query'].nunique() if 'query' in df_query.columns else 0
         keyword_coverage_score = min(100, (unique_queries / 100) * 100)
 
-        # 页面覆盖度
         if not data['by_page'].empty and 'page' in data['by_page'].columns:
             unique_pages = data['by_page']['page'].nunique()
         else:
             unique_pages = 0
         page_coverage_score = min(100, (unique_pages / 20) * 100)
 
-        # 内容深度 (基于有点击的关键词比例)
         if not df_query.empty and 'clicks' in df_query.columns:
             clicked_queries = df_query[df_query['clicks'] > 0]['query'].nunique()
             content_depth_score = min(100, (clicked_queries / max(unique_queries, 1)) * 100)
@@ -169,18 +159,14 @@ elif page == "🏥 SEO 健康度评分":
         content_quality_score = (keyword_coverage_score * 0.4 + page_coverage_score * 0.3 + content_depth_score * 0.3)
 
         # --- 技术SEO维度 (15%) ---
-        # 基于设备兼容性
         if not data['by_device'].empty:
             device_types = data['by_device']['device'].nunique()
             mobile_data = data['by_device'][data['by_device']['device'] == 'MOBILE']
             desktop_data = data['by_device'][data['by_device']['device'] == 'DESKTOP']
 
             if not mobile_data.empty and not desktop_data.empty:
-                mobile_ctr = mobile_data['clicks'].sum() / mobile_data['impressions'].sum() * 100 if mobile_data[
-                                                                                                         'impressions'].sum() > 0 else 0
-                desktop_ctr = desktop_data['clicks'].sum() / desktop_data['impressions'].sum() * 100 if desktop_data[
-                                                                                                            'impressions'].sum() > 0 else 0
-                # 移动端和桌面端CTR差距越小越好
+                mobile_ctr = mobile_data['clicks'].sum() / mobile_data['impressions'].sum() * 100 if mobile_data['impressions'].sum() > 0 else 0
+                desktop_ctr = desktop_data['clicks'].sum() / desktop_data['impressions'].sum() * 100 if desktop_data['impressions'].sum() > 0 else 0
                 ctr_gap = abs(mobile_ctr - desktop_ctr)
                 device_compat_score = max(0, 100 - ctr_gap * 20)
             else:
@@ -191,27 +177,22 @@ elif page == "🏥 SEO 健康度评分":
         technical_seo_score = device_compat_score
 
         # --- 用户体验维度 (15%) ---
-        # 基于CTR趋势和排名稳定性
         if len(df_date) >= 30:
             recent_30 = df_date.nlargest(30, 'data_date')
             older_30 = df_date.nsmallest(30, 'data_date')
 
-            recent_ctr = recent_30['clicks'].sum() / recent_30['impressions'].sum() * 100 if recent_30[
-                                                                                                 'impressions'].sum() > 0 else 0
-            older_ctr = older_30['clicks'].sum() / older_30['impressions'].sum() * 100 if older_30[
-                                                                                              'impressions'].sum() > 0 else 0
+            recent_ctr = recent_30['clicks'].sum() / recent_30['impressions'].sum() * 100 if recent_30['impressions'].sum() > 0 else 0
+            older_ctr = older_30['clicks'].sum() / older_30['impressions'].sum() * 100 if older_30['impressions'].sum() > 0 else 0
 
             if older_ctr > 0:
                 ctr_trend = (recent_ctr - older_ctr) / older_ctr * 100
             else:
                 ctr_trend = 0
 
-            # 趋势为正则加分
             trend_score = min(100, max(0, 50 + ctr_trend * 2))
         else:
             trend_score = 50
 
-        # 排名稳定性
         position_std = df_date['position'].std()
         stability_score = max(0, 100 - position_std * 2)
 
@@ -278,6 +259,8 @@ elif page == "🏥 SEO 健康度评分":
             ]
         }
         st.table(pd.DataFrame(score_data))
+    else:
+        st.warning("数据不足，无法计算健康度评分。")
 
 # ==================== 页面3：搜索表现趋势 ====================
 elif page == "📈 搜索表现趋势":
@@ -347,6 +330,8 @@ elif page == "📈 搜索表现趋势":
         fig2.update_yaxes(title_text="CTR (%)", secondary_y=False)
         fig2.update_yaxes(title_text="平均排名", autorange="reversed", secondary_y=True)
         st.plotly_chart(fig2, use_container_width=True)
+    else:
+        st.warning("未找到日期维度数据，请检查数据文件。")
 
 # ==================== 页面4：国家/地区分析 ====================
 elif page == "🌍 国家/地区分析":
@@ -400,6 +385,8 @@ elif page == "🌍 国家/地区分析":
         )
         fig_map.update_layout(height=400)
         st.plotly_chart(fig_map, use_container_width=True)
+    else:
+        st.warning("未找到国家维度数据，请检查数据文件。")
 
 # ==================== 页面5：设备分布 ====================
 elif page == "📱 设备分布":
@@ -450,6 +437,8 @@ elif page == "📱 设备分布":
                             color_discrete_sequence=['#FF6B6B', '#4ECDC4', '#45B7D1'])
         fig_trend.update_layout(height=350)
         st.plotly_chart(fig_trend, use_container_width=True)
+    else:
+        st.warning("未找到设备维度数据，请检查数据文件。")
 
 # ==================== 页面6：流量异常检测 ====================
 elif page == "🚨 流量异常检测":
@@ -471,8 +460,7 @@ elif page == "🚨 流量异常检测":
         metric_choice = st.sidebar.selectbox(
             "检测指标",
             ["impressions", "clicks", "ctr", "position"],
-            format_func=lambda x: {"impressions": "展示次数", "clicks": "点击数", "ctr": "CTR", "position": "平均排名"}[
-                x]
+            format_func=lambda x: {"impressions": "展示次数", "clicks": "点击数", "ctr": "CTR", "position": "平均排名"}[x]
         )
 
         if detection_method == "Z-Score (标准差法)":
@@ -490,7 +478,7 @@ elif page == "🚨 流量异常检测":
         dates = df['data_date'].values
 
         anomalies = np.zeros(len(metric_data), dtype=bool)
-        anomaly_type = [''] * len(metric_data)  # 'high' or 'low'
+        anomaly_type = [''] * len(metric_data)
 
         if detection_method == "Z-Score (标准差法)":
             mean = np.mean(metric_data)
@@ -614,7 +602,6 @@ elif page == "🚨 流量异常检测":
             anomaly_df['指标值'] = anomaly_df[metric_choice].apply(
                 lambda x: f"{x:.2f}" if metric_choice == 'ctr' else f"{int(x)}")
 
-
             # 添加可能原因分析
             def analyze_cause(row):
                 if row['anomaly_type'] == 'high':
@@ -636,7 +623,6 @@ elif page == "🚨 流量异常检测":
                     else:
                         return "可能原因: 展示量大幅增加但点击未跟上/标题与搜索意图不匹配"
 
-
             anomaly_df['可能原因'] = anomaly_df.apply(analyze_cause, axis=1)
 
             display_cols = ['日期', '类型', '指标值', '可能原因']
@@ -652,7 +638,6 @@ elif page == "🚨 流量异常检测":
             col1, col2 = st.columns(2)
 
             with col1:
-                # 按月统计异常数量
                 anomaly_df['month'] = pd.to_datetime(anomaly_df['日期']).dt.to_period('M').astype(str)
                 monthly_anomalies = anomaly_df.groupby('month').size().reset_index(name='异常数量')
 
@@ -663,7 +648,6 @@ elif page == "🚨 流量异常检测":
                 st.plotly_chart(fig_monthly, use_container_width=True)
 
             with col2:
-                # 异常类型占比
                 type_counts = anomaly_df['anomaly_type'].value_counts()
                 fig_type = px.pie(values=type_counts.values,
                                   names=['异常高值' if n == 'high' else '异常低值' for n in type_counts.index],
