@@ -782,8 +782,3 @@ elif page == '📄 Page Analysis':
     else:
         st.info("未找到页面数据，请确保 data/ 目录下有 cleaned_by_page.csv" if lang == '中文' else "Page data not found")
 
-| Part | 内容 |
-|------|------|
-| Part 1/3 | 配置 + CSS + 数据加载 + 评分模型 + 侧边栏 |
-| Part 2/3 | Overview + Health Score + Search Trends + Keyword Insights + Page Analysis |
-| Part 3/3 | Country/Region（世界地图） + Device + Monitoring + Recommendations |
