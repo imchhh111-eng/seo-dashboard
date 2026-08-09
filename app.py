@@ -527,13 +527,13 @@ elif page in ["🔍 关键词洞察", "🔍 Keywords"]:
         tk = df['query'].nunique()
         ck = df[df['clicks'] > 0]['query'].nunique()
         topk = df.nlargest(1, 'clicks')['query'].values[0] if len(df) > 0 else '-'
-         stk1, k2, k3 = st.columns([1, 1, 1])
-with k1:
-    st.markdown(f'<div class="metric-card"><div class="metric-label">{"有点击" if lang == "中文" else "Clicked"}</div><div class="metric-value">{ck:,}</div></div>', unsafe_allow_html=True)
-with k2:
-    st.markdown(f'<div class="metric-card"><div class="metric-label">{"总关键词" if lang == "中文" else "Total"}</div><div class="metric-value">{tk:,}</div></div>', unsafe_allow_html=True)
-with k3:
-    st.markdown(f'<div class="metric-card"><div class="metric-label">Top</div><div class="metric-value" style="font-size:1.3rem;">{topk[:20]}</div></div>', unsafe_allow_html=True)
+        k1, k2, k3 = st.columns([1, 1, 1])
+        with k1:
+            st.markdown(f'<div class="metric-card"><div class="metric-label">{"有点击" if lang == "中文" else "Clicked"}</div><div class="metric-value">{ck:,}</div></div>', unsafe_allow_html=True)
+        with k2:
+            st.markdown(f'<div class="metric-card"><div class="metric-label">{"总关键词" if lang == "中文" else "Total"}</div><div class="metric-value">{tk:,}</div></div>', unsafe_allow_html=True)
+        with k3:
+            st.markdown(f'<div class="metric-card"><div class="metric-label">Top</div><div class="metric-value" style="font-size:1.3rem;">{topk[:20]}</div></div>', unsafe_allow_html=True)
 
         st.markdown("---")
         with st.expander("ℹ️ 关键词分析说明" if lang == '中文' else "ℹ️ Keyword guide", expanded=False):
