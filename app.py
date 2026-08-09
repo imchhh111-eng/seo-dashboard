@@ -836,4 +836,228 @@ elif page in ["📱 设备分布", "📱 Device Distribution"]:
         disp_dev.columns = ['Device', 'Clicks', 'Impressions', 'CTR', 'Avg Position']
         st.dataframe(disp_dev, use_container_width=True)
     else:
-        st.warning("未找到设备数")
+        
+        st.warning("未找到设备数据" if lang == '中文' else "Device data not found")
+
+# ============================================================
+# 页面8：流量异常检测
+# ============================================================
+elif page in ["🚨 流量异常检测", "🚨 Anomaly Detection"]:
+    st.markdown(f'<div class="page-title">{"🚨 流量异常检测" if lang == "中文" else "🚨 Anomaly Detection"}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="page-subtitle">{"基于统计方法自动识别流量异常波动" if lang == "中文" else "Statistical anomaly detection for traffic fluctuations"}</div>', unsafe_allow_html=True)
+
+    if data.get('by_date') is not None:
+        df = data['by_date'].copy()
+        df['data_date'] = pd.to_datetime(df['data_date'])
+        df = df.sort_values('data_date').reset_index(drop=True)
+
+        # Z-Score 异常检测
+        window = st.slider("滚动窗口(天)" if lang == '中文' else "Rolling Window (days)", 7, 60, 28, key="anomaly_window")
+        threshold = st.slider("异常阈值(Z-Score)" if lang == '中文' else "Anomaly Threshold (Z-Score)", 1.5, 4.0, 2.5, 0.5, key="anomaly_thresh")
+
+        df['rolling_mean'] = df['clicks'].rolling(window, min_periods=7).mean()
+        df['rolling_std'] = df['clicks'].rolling(window, min_periods=7).std()
+        df['z_score'] = (df['clicks'] - df['rolling_mean']) / df['rolling_std'].clip(lower=0.1)
+        df['is_anomaly'] = df['z_score'].abs() > threshold
+        df['anomaly_type'] = 'normal'
+        df.loc[df['z_score'] > threshold, 'anomaly_type'] = 'spike'
+        df.loc[df['z_score'] < -threshold, 'anomaly_type'] = 'drop'
+
+        anomalies = df[df['is_anomaly']]
+        spikes = len(anomalies[anomalies['anomaly_type'] == 'spike'])
+        drops = len(anomalies[anomalies['anomaly_type'] == 'drop'])
+
+        a1, a2, a3 = st.columns(3)
+        with a1:
+            st.metric("总异常天数" if lang == '中文' else "Anomaly Days", f"{len(anomalies)}")
+        with a2:
+            st.metric("🔺 流量飙升" if lang == '中文' else "🔺 Spikes", f"{spikes}")
+        with a3:
+            st.metric("🔻 流量骤降" if lang == '中文' else "🔻 Drops", f"{drops}")
+
+        st.markdown("---")
+
+        # 异常可视化
+        fig_anomaly = go.Figure()
+        fig_anomaly.add_trace(go.Scatter(
+            x=df['data_date'], y=df['clicks'], mode='lines',
+            name='Clicks', line=dict(color='#93c5fd', width=1.5)
+        ))
+        fig_anomaly.add_trace(go.Scatter(
+            x=df['data_date'], y=df['rolling_mean'], mode='lines',
+            name=f'MA{window}', line=dict(color='#1a56db', width=2)
+        ))
+        # 上下界
+        upper = df['rolling_mean'] + threshold * df['rolling_std']
+        lower = df['rolling_mean'] - threshold * df['rolling_std']
+        fig_anomaly.add_trace(go.Scatter(
+            x=df['data_date'], y=upper, mode='lines',
+            name='Upper Bound', line=dict(color='#d1d5db', width=1, dash='dot')
+        ))
+        fig_anomaly.add_trace(go.Scatter(
+            x=df['data_date'], y=lower, mode='lines',
+            name='Lower Bound', line=dict(color='#d1d5db', width=1, dash='dot'),
+            fill='tonexty', fillcolor='rgba(209,213,219,0.1)'
+        ))
+        # 标记异常点
+        spike_df = df[df['anomaly_type'] == 'spike']
+        drop_df = df[df['anomaly_type'] == 'drop']
+        if len(spike_df) > 0:
+            fig_anomaly.add_trace(go.Scatter(
+                x=spike_df['data_date'], y=spike_df['clicks'], mode='markers',
+                name='Spike', marker=dict(color='#dc2626', size=10, symbol='triangle-up')
+            ))
+        if len(drop_df) > 0:
+            fig_anomaly.add_trace(go.Scatter(
+                x=drop_df['data_date'], y=drop_df['clicks'], mode='markers',
+                name='Drop', marker=dict(color='#059669', size=10, symbol='triangle-down')
+            ))
+        fig_anomaly.update_layout(
+            height=500, hovermode='x unified',
+            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1),
+            margin=dict(l=60, r=20, t=40, b=40)
+        )
+        st.plotly_chart(fig_anomaly, use_container_width=True)
+
+        # 异常事件列表
+        if len(anomalies) > 0:
+            st.markdown(f"### {'📋 异常事件列表' if lang == '中文' else '📋 Anomaly Events'}")
+            disp_anomaly = anomalies[['data_date', 'clicks', 'rolling_mean', 'z_score', 'anomaly_type']].copy()
+            disp_anomaly['data_date'] = disp_anomaly['data_date'].dt.strftime('%Y-%m-%d')
+            disp_anomaly['rolling_mean'] = disp_anomaly['rolling_mean'].apply(lambda x: f"{x:.1f}")
+            disp_anomaly['z_score'] = disp_anomaly['z_score'].apply(lambda x: f"{x:.2f}")
+            disp_anomaly.columns = ['Date', 'Clicks', 'Expected', 'Z-Score', 'Type']
+            st.dataframe(disp_anomaly.sort_values('Date', ascending=False).head(30), use_container_width=True, hide_index=True)
+    else:
+        st.warning("未找到日期数据" if lang == '中文' else "Date data not found")
+
+# ============================================================
+# 页面9：优化建议 (V3.3 诊断引擎)
+# ============================================================
+elif page in ["🚀 优化建议", "🚀 Recommendations"]:
+    st.markdown(f'<div class="page-title">{"🚀 SEO 优化建议 (V3.3)" if lang == "中文" else "🚀 SEO Recommendations (V3.3)"}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="page-subtitle">{"基于V3.3十维度评估模型自动生成的诊断建议" if lang == "中文" else "Auto-generated diagnosis based on V3.3 model"}</div>', unsafe_allow_html=True)
+
+    score_result = calculate_seo_score_v33(data)
+    diagnosis = generate_diagnosis(score_result, lang)
+
+    # 诊断概览
+    urgent_count = sum(1 for d in diagnosis if d['level'] == 'urgent')
+    attention_count = sum(1 for d in diagnosis if d['level'] == 'attention')
+    healthy_count = 10 - urgent_count - attention_count
+
+    col_u, col_a, col_o = st.columns(3)
+    with col_u:
+        st.metric("🔴 紧急" if lang == '中文' else "🔴 Urgent", f"{urgent_count}")
+    with col_a:
+        st.metric("🟡 关注" if lang == '中文' else "🟡 Attention", f"{attention_count}")
+    with col_o:
+        st.metric("🟢 健康" if lang == '中文' else "🟢 Healthy", f"{healthy_count}")
+
+    st.markdown("---")
+
+    # 诊断建议列表
+    if diagnosis:
+        st.markdown(f"### {'📋 优化行动清单 (按优先级排序)' if lang == '中文' else '📋 Action Items (Priority Ordered)'}")
+
+        indicator_names_map = {
+            'ranking': '关键词排名分布' if lang == '中文' else 'Keyword Ranking',
+            'diversity': '关键词多样性' if lang == '中文' else 'Keyword Diversity',
+            'trend': '流量趋势' if lang == '中文' else 'Traffic Trend',
+            'stability': '流量稳定性' if lang == '中文' else 'Traffic Stability',
+            'ctr': 'CTR效率' if lang == '中文' else 'CTR Efficiency',
+            'page_activity': '页面活跃度' if lang == '中文' else 'Page Activity',
+            'device': '设备适配' if lang == '中文' else 'Device',
+            'region': '地区覆盖' if lang == '中文' else 'Region',
+            'concentration': '页面集中度' if lang == '中文' else 'Concentration',
+            'content': '内容深度与更新' if lang == '中文' else 'Content',
+        }
+
+        for i, rec in enumerate(diagnosis):
+            if rec['level'] == 'urgent':
+                priority = 'P0'
+                color = '#dc2626'
+                bg = '#fef2f2'
+            else:
+                priority = 'P1'
+                color = '#d97706'
+                bg = '#fffbeb'
+
+            st.markdown(f"""
+            <div style="border-left: 4px solid {color}; padding: 1rem 1.5rem; margin: 0.8rem 0; background: {bg}; border-radius: 0 8px 8px 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; color: {color}; font-size: 0.9rem;">{priority} · {indicator_names_map.get(rec['key'], rec['key'])}</span>
+                    <span style="font-size: 0.85rem; color: #6b7280;">{'得分' if lang == '中文' else 'Score'}: {rec['score']:.1f}/100 | {'权重' if lang == '中文' else 'Weight'}: {rec['weight']}%</span>
+                </div>
+                <div style="margin-top: 0.5rem; font-size: 1rem; color: #111827; font-weight: 600;">⚠️ {rec['issue']}</div>
+                <div style="margin-top: 0.3rem; font-size: 0.95rem; color: #4b5563;">💡 {rec['action']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.success("🎉 所有指标均在健康范围内！" if lang == '中文' else "🎉 All indicators healthy!")
+
+    # 评分提升路径
+    st.markdown("---")
+    st.markdown(f"### {'📈 评分提升路径' if lang == '中文' else '📈 Score Improvement Path'}")
+
+    current_score = score_result['final_score']
+    indicators = score_result['indicators']
+
+    improvements = []
+    for key, weight in WEIGHTS.items():
+        current = indicators[key]
+        if current < 60:
+            potential_gain = (60 - current) * weight / 100
+            indicator_names_map = {
+                'ranking': '关键词排名分布' if lang == '中文' else 'Keyword Ranking',
+                'diversity': '关键词多样性' if lang == '中文' else 'Keyword Diversity',
+                'trend': '流量趋势' if lang == '中文' else 'Traffic Trend',
+                'stability': '流量稳定性' if lang == '中文' else 'Traffic Stability',
+                'ctr': 'CTR效率' if lang == '中文' else 'CTR Efficiency',
+                'page_activity': '页面活跃度' if lang == '中文' else 'Page Activity',
+                'device': '设备适配' if lang == '中文' else 'Device',
+                'region': '地区覆盖' if lang == '中文' else 'Region',
+                'concentration': '页面集中度' if lang == '中文' else 'Concentration',
+                'content': '内容深度与更新' if lang == '中文' else 'Content',
+            }
+            improvements.append({
+                'name': indicator_names_map.get(key, key),
+                'current': current,
+                'gain': potential_gain,
+                'weight': weight
+            })
+
+    improvements.sort(key=lambda x: x['gain'], reverse=True)
+
+    total_potential = sum(i['gain'] for i in improvements)
+    st.markdown(f"""
+    <div style="background: #eff6ff; padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem;">
+        <div style="font-size: 1.1rem; font-weight: 600; color: #1a56db;">
+            {"当前" if lang == "中文" else "Current"}: {current_score} → {"目标(全部达60)" if lang == "中文" else "Target(all reach 60)"}: {current_score + total_potential:.1f} (+{total_potential:.1f})
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if improvements:
+        fig_improve = go.Figure(go.Bar(
+            x=[i['gain'] for i in improvements],
+            y=[f"{i['name']} ({i['current']:.0f}→60)" for i in improvements],
+            orientation='h',
+            marker_color='#1a56db',
+            text=[f"+{i['gain']:.1f}" for i in improvements],
+            textposition='outside',
+            textfont=dict(size=13)
+        ))
+        fig_improve.update_layout(
+            height=max(300, len(improvements) * 50),
+            xaxis=dict(title='加权分提升' if lang == '中文' else 'Weighted Gain'),
+            yaxis=dict(autorange='reversed'),
+            margin=dict(l=250, r=60, t=20, b=40)
+        )
+        st.plotly_chart(fig_improve, use_container_width=True)
+
+    # 外链权威预留说明
+    st.markdown("---")
+    st.info("💡 外链权威维度（Backlink Authority）已预留接口，待接入 Ahrefs/Moz API 后可扩展为更完整的评估模型。" if lang == '中文' else "💡 Backlink Authority dimension reserved. Can be enabled after third-party API integration.")
+
+
