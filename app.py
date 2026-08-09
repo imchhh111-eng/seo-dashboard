@@ -529,8 +529,7 @@ elif page in ["🔍 关键词洞察", "🔍 Keywords"]:
         topk = df.nlargest(1, 'clicks')['query'].values[0] if len(df) > 0 else '-'
         k1, k2, k3 = st.columns(3)
         with k1:
-            st.
-        k1, k2, k3 = st.columns(3)
+            st.k1, k2, k3 = st.columns(3)
         with k1:
             st.metric("总关键词" if lang == '中文' else "Total", f"{tk:,}")
         with k2:
