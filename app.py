@@ -34,7 +34,7 @@ html, body, [class*="css"] { font-size: 16px; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes growUp { from { opacity: 0; transform: scaleY(0.3); } to { opacity: 1; transform: scaleY(1); } }
 @keyframes flyIn { from { opacity: 0; transform: translateX(-30px) scale(0.9); } to { opacity: 1; transform: translateX(0) scale(1); } }
-.styled-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin: 1rem 0; animation: fadeIn 0.8s ease-out; }
+.styled-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin: 1rem 0; }
 .styled-table thead tr { background: #1a56db; color: #ffffff; text-align: left; }
 .styled-table th { padding: 0.75rem 1rem; font-weight: 600; }
 .styled-table td { padding: 0.65rem 1rem; border-bottom: 1px solid #e5e7eb; }
@@ -71,7 +71,6 @@ footer {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
-
 def piecewise_linear(value, breakpoints, scores):
     if value <= breakpoints[0]:
         return scores[0]
@@ -83,7 +82,6 @@ def piecewise_linear(value, breakpoints, scores):
             return scores[i] + ratio * (scores[i + 1] - scores[i])
     return scores[-1]
 
-
 def calculate_gini(values):
     sorted_vals = np.sort(values)
     n = len(sorted_vals)
@@ -91,7 +89,6 @@ def calculate_gini(values):
         return 0
     idx = np.arange(1, n + 1)
     return (2 * np.sum(idx * sorted_vals) - (n + 1) * np.sum(sorted_vals)) / (n * np.sum(sorted_vals))
-
 
 THRESHOLDS = {
     'ranking': {'bp': [0, 0.4, 0.8, 1.5, 2.5, 5.0], 'sc': [0, 20, 40, 60, 80, 100]},
@@ -110,7 +107,6 @@ THRESHOLDS = {
 WEIGHTS = {'ranking': 19, 'diversity': 8, 'trend': 20, 'stability': 8, 'ctr': 14, 'page_activity': 14, 'device': 2, 'region': 4, 'concentration': 2, 'content': 9}
 CTR_BENCHMARKS = {(0, 1): 0.398, (1, 2): 0.187, (2, 3): 0.102, (3, 5): 0.0625, (5, 10): 0.0276, (10, 20): 0.0098, (20, 50): 0.003, (50, 100): 0.0005}
 GRADE_SYSTEM = [(90, 101, 'A+', '卓越', 'Excellent', '#059669'), (80, 90, 'A', '优秀', 'Great', '#10b981'), (70, 80, 'B+', '良好', 'Good', '#2563eb'), (60, 70, 'B', '中上', 'Above Avg', '#3b82f6'), (50, 60, 'C+', '中等', 'Average', '#d97706'), (40, 50, 'C', '中下', 'Below Avg', '#f59e0b'), (30, 40, 'D+', '较差', 'Poor', '#dc2626'), (20, 30, 'D', '差', 'Bad', '#b91c1c'), (10, 20, 'E', '危险', 'Critical', '#7f1d1d'), (0, 10, 'F', '濒死', 'Failing', '#450a0a')]
-
 
 def calculate_seo_score_v33(data):
     results = {}
@@ -134,7 +130,6 @@ def calculate_seo_score_v33(data):
         scale_factor = min(1.0, daily_avg / 10.0)
     else:
         clicks, n_days, daily_avg, scale_factor = np.array([]), 0, 0, 0.5
-
     if by_query is not None and len(months) > 0:
         ms1 = []
         for date in months:
@@ -148,7 +143,6 @@ def calculate_seo_score_v33(data):
         results['ranking'] = np.median(ms1)
     else:
         results['ranking'] = 0
-
     if by_query is not None and len(months) > 0:
         ms2 = []
         for date in months:
@@ -157,7 +151,6 @@ def calculate_seo_score_v33(data):
         results['diversity'] = np.median(ms2)
     else:
         results['diversity'] = 0
-
     if n_days >= 90:
         seg_rates = []
         for i in range(0, n_days - 90 + 1, 30):
@@ -175,7 +168,6 @@ def calculate_seo_score_v33(data):
         details['trend'] = {'f1_rate': f1_rate, 'retention': retention, 's_f1': s_f1, 's_f2': s_f2}
     else:
         results['trend'] = 50
-
     if n_days >= 28:
         x_all = np.arange(n_days)
         sl, ic, _, _, _ = scipy_stats.linregress(x_all, clicks)
@@ -188,7 +180,6 @@ def calculate_seo_score_v33(data):
         results['stability'] = piecewise_linear(np.median(rcv) if rcv else 1.0, THRESHOLDS['stability']['bp'], THRESHOLDS['stability']['sc'])
     else:
         results['stability'] = 50
-
     if by_query is not None and len(months) > 0:
         ms5 = []
         for date in months:
@@ -205,7 +196,6 @@ def calculate_seo_score_v33(data):
         results['ctr'] = np.median(ms5)
     else:
         results['ctr'] = 0
-
     if by_page is not None and len(months) > 0:
         ms6 = []
         for date in months:
@@ -216,7 +206,6 @@ def calculate_seo_score_v33(data):
         results['page_activity'] = np.median(ms6)
     else:
         results['page_activity'] = 0
-
     if by_device is not None and len(months) > 0:
         ms7 = []
         for date in months:
@@ -229,7 +218,6 @@ def calculate_seo_score_v33(data):
         results['device'] = np.median(ms7) * scale_factor
     else:
         results['device'] = 0
-
     if by_country is not None and len(months) > 0:
         ms8 = []
         for date in months:
@@ -242,7 +230,6 @@ def calculate_seo_score_v33(data):
         results['region'] = np.median(ms8) * scale_factor
     else:
         results['region'] = 0
-
     if by_page is not None and len(months) > 0:
         r6m = months[-6:] if len(months) >= 6 else months
         rp = by_page[by_page['data_date'].isin(r6m)]
@@ -261,7 +248,6 @@ def calculate_seo_score_v33(data):
         results['concentration'] = s9 * scale_factor
     else:
         results['concentration'] = 0
-
     if query_page is not None and by_query is not None and len(months) > 0:
         md_list = []
         for date in months:
@@ -287,7 +273,6 @@ def calculate_seo_score_v33(data):
         results['content'] = (s_depth + s_fresh) / 2
     else:
         results['content'] = 0
-
     final_score = sum(results[k] * WEIGHTS[k] / 100 for k in WEIGHTS)
     grade, gl, gle, gc = 'F', '濒死', 'Failing', '#450a0a'
     for lo, hi, g, lcn, len_, c in GRADE_SYSTEM:
@@ -296,11 +281,10 @@ def calculate_seo_score_v33(data):
             break
     return {'final_score': round(final_score, 1), 'grade': grade, 'grade_label': gl, 'grade_label_en': gle, 'grade_color': gc, 'indicators': results, 'details': details, 'scale_factor': scale_factor, 'daily_avg': daily_avg, 'n_days': n_days, 'n_months': len(months)}
 
-
 def generate_diagnosis(score_result, lang='中文'):
     indicators = score_result['indicators']
     diagnosis = []
-    RULES = {'ranking': {'i': '关键词排名极差', 'ie': 'Rankings critically low', 'a': '聚焦长尾词，优化11-20位页面内容', 'ae': 'Focus long-tail, optimize pages ranked 11-20'}, 'diversity': {'i': '有效关键词不足', 'ie': 'Insufficient keywords', 'a': '扩展内容矩阵覆盖买家旅程', 'ae': 'Expand content for buyer journey'}, 'trend': {'i': '流量持续下降', 'ie': 'Traffic declining', 'a': '排查索引/惩罚/竞争问题', 'ae': 'Check indexing/penalties/competition'}, 'stability': {'i': '流量波动剧烈', 'ie': 'High volatility', 'a': '建立常青内容减少依赖', 'ae': 'Build evergreen content'}, 'ctr': {'i': 'CTR低于基准', 'ie': 'CTR below benchmark', 'a': '优化Title/Description加入CTA', 'ae': 'Optimize titles with CTAs'}, 'page_activity': {'i': '大量页面零点击', 'ie': 'Many zero-click pages', 'a': '审计零流量页面：更新/合并/删除', 'ae': 'Audit: update/merge/remove'}, 'content': {'i': '内容深度不足更新慢', 'ie': 'Low depth, slow updates', 'a': '扩展页面关键词覆盖+定期更新', 'ae': 'Expand coverage + regular updates'}}
+    RULES = {'ranking': {'i': '关键词排名极差，几乎无Top10词', 'ie': 'Rankings critically low', 'a': '聚焦长尾词，优化11-20位页面内容深度和内链', 'ae': 'Focus long-tail, optimize pages ranked 11-20'}, 'diversity': {'i': '有效关键词数量不足，搜索覆盖面窄', 'ie': 'Insufficient effective keywords', 'a': '扩展内容矩阵覆盖B2B买家旅程各阶段', 'ae': 'Expand content for buyer journey stages'}, 'trend': {'i': '流量持续下降，站点面临严重问题', 'ie': 'Traffic continuously declining', 'a': '排查索引/算法惩罚/竞争问题，制定恢复计划', 'ae': 'Check indexing/penalties/competition'}, 'stability': {'i': '流量波动剧烈，缺乏稳定搜索基础', 'ie': 'High traffic volatility', 'a': '建立常青内容体系，减少单一依赖', 'ae': 'Build evergreen content'}, 'ctr': {'i': 'CTR效率低于行业基准', 'ie': 'CTR below benchmark', 'a': '优化Title/Meta Description，加入数字和CTA', 'ae': 'Optimize titles with numbers and CTAs'}, 'page_activity': {'i': '大量页面零点击，内容利用率低', 'ie': 'Many zero-click pages', 'a': '审计零流量页面：更新、合并或删除', 'ae': 'Audit: update, merge, or remove'}, 'content': {'i': '内容深度不足且更新频率低', 'ie': 'Low content depth and freshness', 'a': '扩展页面关键词覆盖，建立定期更新机制', 'ae': 'Expand coverage + regular updates'}}
     for key, score in sorted(indicators.items(), key=lambda x: x[1]):
         if key in RULES:
             if score < 20:
@@ -312,7 +296,6 @@ def generate_diagnosis(score_result, lang='中文'):
             r = RULES[key]
             diagnosis.append({'key': key, 'score': score, 'level': lv, 'weight': WEIGHTS.get(key, 0), 'issue': r['i'] if lang == '中文' else r['ie'], 'action': r['a'] if lang == '中文' else r['ae']})
     return diagnosis
-
 
 def render_styled_table(df, highlight_col=None):
     html = '<table class="styled-table"><thead><tr>'
@@ -335,6 +318,44 @@ def render_styled_table(df, highlight_col=None):
     html += '</tbody></table>'
     return html
 
+EXPLANATIONS = {
+    'overview': {
+        'cn': """**十维度评估模型**基于 Google Search Console 数据，从搜索可见性、流量质量、用户行为、内容健康四个层面对 B2B 独立站进行量化诊断。\n\n**评分方法：** 采用分段线性插值函数，消除传统阈值评分的边界跳变问题。权重通过 AHP 层次分析法确定（一致性比率 CR=0.0182<0.10）。\n\n**颜色含义：** 🟢绿色(≥60)=健康 | 🟠橙色(40-59)=需关注 | 🔴红色(<40)=需紧急优化\n\n**规模系数：** 对于日均点击<10的低流量站点，结构性指标会乘以规模系数，避免小样本导致评分虚高。""",
+        'en': """**Ten-dimension model** quantifies B2B site health using GSC data across: Search Visibility, Traffic Quality, User Behavior, and Content Health.\n\n**Scoring:** Piecewise linear interpolation eliminates boundary jumps. Weights validated via AHP (CR=0.0182<0.10).\n\n**Colors:** 🟢Green(≥60)=Healthy | 🟠Orange(40-59)=Attention | 🔴Red(<40)=Urgent\n\n**Scale factor:** For low-traffic sites (<10 clicks/day), structural metrics are adjusted to prevent inflated scores."""
+    },
+    'score': {
+        'cn': """**各指标计算逻辑：**\n\n• **关键词排名分布(19%)** — 按排名区间加权：Top3×5 + Top10×3 + Top20×2 + Top50×1，除以总词数。反映搜索竞争力。\n\n• **关键词多样性(8%)** — 月度有效关键词数（展示≥10次），衡量搜索覆盖广度。\n\n• **流量趋势(20%)** — 复合指标：F1=滚动90天窗口斜率中位数，F2=最近90天/历史峰值（保留率）。\n\n• **流量稳定性(8%)** — 去趋势后28天滚动CV中位数，越低越稳定。\n\n• **CTR效率(14%)** — 实际CTR与排名基准CTR的比值（如Top1基准=39.8%）。\n\n• **页面活跃度(14%)** — 有点击页面数/总页面数，反映内容利用率。\n\n• **设备适配(2%)** — 移动端CTR/桌面端CTR，接近1为佳。\n\n• **地区覆盖(4%)** — 有点击国家数 + Top1集中度的复合分。\n\n• **页面集中度(2%)** — Gini系数，0.50-0.65为最优区间。\n\n• **内容深度(9%)** — 页面关键词覆盖度 + 内容新鲜度。""",
+        'en': """**Metric calculations:**\n\n• **Ranking(19%)** — Weighted by position bands: Top3×5 + Top10×3 + Top20×2 + Top50×1.\n\n• **Diversity(8%)** — Monthly effective keywords (impressions≥10).\n\n• **Trend(20%)** — F1=median slope of 90-day windows, F2=retention vs peak.\n\n• **Stability(8%)** — Detrended 28-day rolling CV.\n\n• **CTR(14%)** — Actual/benchmark CTR by position.\n\n• **Activity(14%)** — Pages with clicks / total pages.\n\n• **Device(2%)** — Mobile/Desktop CTR ratio.\n\n• **Region(4%)** — Country count + concentration.\n\n• **Concentration(2%)** — Gini coefficient (optimal: 0.50-0.65).\n\n• **Content(9%)** — Keyword coverage + freshness."""
+    },
+    'trends': {
+        'cn': """**图表说明：**\n\n**上图 — 点击趋势：** 蓝色散点为每日实际点击，深蓝线为7日移动平均（短期），红色虚线为30日移动平均（长期）。MA7下穿MA30通常意味着短期恶化。\n\n**下图 — 展示量：** 柱状图展示每日搜索展示次数，反映Google曝光量变化。\n\n**CTR与排名：** 绿线=CTR(7日均值)，橙线=排名（Y轴反转，越高越好）。理想状态：CTR上升+排名数值下降。""",
+        'en': """**Chart guide:**\n\n**Top — Clicks:** Blue dots = daily, dark blue = 7-day MA, red dashed = 30-day MA. MA7 below MA30 = deterioration.\n\n**Bottom — Impressions:** Daily search visibility.\n\n**CTR & Position:** Green = CTR(7d), Orange = position (inverted). Ideal: CTR up + position down."""
+    },
+    'keywords': {
+        'cn': """**关键词分析说明：**\n\n**Top 20 表格：** 按总点击排序。关注CTR异常低的高展示词——优化Title/Description的首选目标。\n\n**机会矩阵：** X轴=展示量，Y轴=CTR，气泡大小=点击，颜色=排名。**右下角=高展示低CTR**，说明用户搜索了但没点你，标题/描述吸引力不足或意图不匹配。""",
+        'en': """**Keyword guide:**\n\n**Top 20:** By clicks. Watch high-impression words with low CTR — optimization targets.\n\n**Opportunity matrix:** X=impressions, Y=CTR, size=clicks, color=position. **Bottom-right = high exposure, low conversion** — optimize titles or check intent."""
+    },
+    'pages': {
+        'cn': """**页面分析说明：**\n\n**活跃率** = 有点击页面 ÷ 总页面。B2B典型值10-30%，低于10%说明大量内容未被利用。\n\n**Top 15：** 按点击排序，颜色=CTR。关注高点击低CTR页面。\n\n**优化机会：** 展示≥50但点击≤5的页面——已获得Google曝光但未转化，是ROI最高的优化目标。""",
+        'en': """**Page guide:**\n\n**Activity rate** = Clicked pages ÷ Total. B2B typical: 10-30%.\n\n**Top 15:** By clicks, color=CTR.\n\n**Opportunities:** Impressions≥50, clicks≤5 — visible but not converting. Highest ROI targets."""
+    },
+    'countries': {
+        'cn': """**地区分析说明：**\n\n**世界地图：** 颜色深浅=所选指标强度，可切换点击/展示/CTR/排名。\n\n**评估逻辑：** 得分=有点击国家数(广度) + Top1国家占比(集中度)。对B2B站点，目标市场覆盖比纯粹国家数更重要。""",
+        'en': """**Country guide:**\n\n**Map:** Color = metric intensity. Switch between clicks/impressions/CTR/position.\n\n**Scoring:** Country count (breadth) + Top-1 concentration. For B2B, target market coverage > raw country count."""
+    },
+    'devices': {
+        'cn': """**设备分析说明：**\n\n**点击占比：** B2B站点通常桌面端60-80%，但移动端持续增长。\n\n**CTR对比：** 移动端CTR显著低于桌面端（比值<0.7）说明移动体验有问题。\n\n**月度趋势：** 观察设备占比变化，移动端上升则需优先优化移动体验。""",
+        'en': """**Device guide:**\n\n**Share:** B2B typical: desktop 60-80%, mobile growing.\n\n**CTR:** Mobile CTR << Desktop (ratio<0.7) = mobile UX issues.\n\n**Trend:** Rising mobile share = prioritize mobile optimization."""
+    },
+    'anomalies': {
+        'cn': """**异常检测说明：**\n\n**方法：** 基于滚动窗口Z-Score，超过阈值标记为异常。\n\n**参数：** 窗口=基准时间范围（28天适合多数场景）；Z阈值=偏离程度（2.5为默认）。\n\n**🔺飙升：** 流量突增——可能被分享/排名跳升/季节性爆发。\n**🔻骤降：** 流量突降——可能索引问题/算法惩罚/服务器故障。""",
+        'en': """**Anomaly guide:**\n\n**Method:** Z-Score on rolling window.\n\n**Params:** Window=baseline period (28d default); Z=deviation (2.5 default).\n\n**🔺Spikes:** Sudden surge — sharing/ranking jump/seasonal.\n**🔻Drops:** Sudden loss — indexing/penalty/server/competition."""
+    },
+    'actions': {
+        'cn': """**优化建议说明：**\n\n**优先级：** P0(紧急)=得分<20，需立即行动；P1(关注)=得分20-40，需改进计划。\n\n**提升路径：** 每个指标提升到60分能贡献的总分增益。优先优化增益最大的指标，投入产出比最高。\n\n**计算：** 增益 = (60-当前分) × 权重%。如流量趋势8分×20% = +10.4分潜力。""",
+        'en': """**Recommendations guide:**\n\n**Priority:** P0=score<20 (urgent); P1=20-40 (attention).\n\n**Path:** Potential gain if each metric reaches 60. Prioritize highest-gain metrics.\n\n**Formula:** Gain = (60-current) × weight%. E.g., Trend 8×20% = +10.4 potential."""
+    }
+}
 
 @st.cache_data
 def load_data():
@@ -371,7 +392,6 @@ with st.sidebar:
 if page in ["📊 总览仪表盘", "📊 Overview"]:
     st.markdown(f'<div class="page-title">{"📊 B2B SEO 总览仪表盘" if lang == "中文" else "📊 B2B SEO Overview"}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="page-subtitle">{"基于 GSC 数据的十维度健康诊断" if lang == "中文" else "Ten-dimension health diagnosis"}</div>', unsafe_allow_html=True)
-
     score_result = calculate_seo_score_v33(data)
     col_score, col_metrics = st.columns([1, 3])
     with col_score:
@@ -391,12 +411,12 @@ if page in ["📊 总览仪表盘", "📊 Overview"]:
                 st.markdown(f'<div class="metric-card"><div class="metric-label">{"平均CTR" if lang == "中文" else "Avg CTR"}</div><div class="metric-value">{ac:.2%}</div></div>', unsafe_allow_html=True)
             with m4:
                 st.markdown(f'<div class="metric-card"><div class="metric-label">{"平均排名" if lang == "中文" else "Avg Pos"}</div><div class="metric-value">{ap:.1f}</div></div>', unsafe_allow_html=True)
-
     st.markdown("---")
     st.markdown(f"### {'📐 十维度得分' if lang == '中文' else '📐 Scores'}")
     leg = '<div class="color-legend"><div class="legend-item"><div class="legend-dot" style="background:#059669;"></div>{g}</div><div class="legend-item"><div class="legend-dot" style="background:#d97706;"></div>{m}</div><div class="legend-item"><div class="legend-dot" style="background:#dc2626;"></div>{p}</div><div class="legend-item" style="color:#9ca3af;">┆ {l}</div></div>'
     st.markdown(leg.format(g='优秀(≥60)' if lang == '中文' else 'Good(≥60)', m='中等(40-59)' if lang == '中文' else 'Avg(40-59)', p='较差(<40)' if lang == '中文' else 'Poor(<40)', l='及格线=60' if lang == '中文' else 'Pass=60'), unsafe_allow_html=True)
-
+    with st.expander("ℹ️ 评估模型说明" if lang == '中文' else "ℹ️ About this model", expanded=False):
+        st.markdown(EXPLANATIONS['overview']['cn' if lang == '中文' else 'en'])
     ind_names = {'ranking': ('关键词排名分布', 'Keyword Ranking', 19), 'diversity': ('关键词多样性', 'Keyword Diversity', 8), 'trend': ('流量趋势', 'Traffic Trend', 20), 'stability': ('流量稳定性', 'Traffic Stability', 8), 'ctr': ('CTR效率', 'CTR Efficiency', 14), 'page_activity': ('页面活跃度', 'Page Activity', 14), 'device': ('设备适配', 'Device', 2), 'region': ('地区覆盖', 'Region', 4), 'concentration': ('页面集中度', 'Concentration', 2), 'content': ('内容深度', 'Content Depth', 9)}
     indicators = score_result['indicators']
     bnames, bscores, bcolors = [], [], []
@@ -406,19 +426,16 @@ if page in ["📊 总览仪表盘", "📊 Overview"]:
         s = indicators[k]
         bscores.append(s)
         bcolors.append('#059669' if s >= 60 else '#d97706' if s >= 40 else '#dc2626')
-
     st.markdown('<div class="chart-grow">', unsafe_allow_html=True)
     fig_bar = go.Figure(go.Bar(x=bscores, y=bnames, orientation='h', marker_color=bcolors, text=[f"{s:.1f}" for s in bscores], textposition='outside', textfont=dict(size=13, color='#374151')))
     fig_bar.update_layout(height=460, xaxis=dict(range=[0, 108], showgrid=True, gridcolor='#f3f4f6'), yaxis=dict(autorange='reversed'), margin=dict(l=200, r=80, t=10, b=40), plot_bgcolor='#fff', paper_bgcolor='#fff')
     fig_bar.add_vline(x=60, line_dash="dash", line_color="#9ca3af", annotation_text="Pass(60)", annotation_font_color="#9ca3af")
     st.plotly_chart(fig_bar, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
-
     st.markdown("---")
     st.markdown(f"### {'🎯 雷达图' if lang == '中文' else '🎯 Radar'}")
     rleg = '<div class="color-legend"><div class="legend-item"><div class="legend-dot" style="background:rgba(26,86,219,0.4);"></div>{a}</div><div class="legend-item" style="color:#9ca3af;">{b}</div></div>'
     st.markdown(rleg.format(a='当前能力' if lang == '中文' else 'Current', b='外圈=100' if lang == '中文' else 'Outer=100'), unsafe_allow_html=True)
-
     st.markdown('<div class="chart-fade">', unsafe_allow_html=True)
     rl = [ind_names[k][0 if lang == '中文' else 1] for k in ind_names]
     rv = [indicators[k] for k in ind_names]
@@ -434,7 +451,8 @@ elif page in ["🎯 健康度评分", "🎯 Score"]:
     st.markdown(f'<div class="page-title">{"🎯 SEO 健康度评分详情" if lang == "中文" else "🎯 Health Score Details"}</div>', unsafe_allow_html=True)
     score_result = calculate_seo_score_v33(data)
     st.markdown(f'<div style="text-align:center;padding:2rem;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:16px;margin-bottom:2rem;"><div style="font-size:4rem;font-weight:800;color:{score_result["grade_color"]};">{score_result["final_score"]}</div><div style="font-size:1.5rem;color:{score_result["grade_color"]};font-weight:600;">{score_result["grade"]} · {score_result["grade_label"] if lang == "中文" else score_result["grade_label_en"]}</div><div style="font-size:0.95rem;color:#6b7280;margin-top:0.5rem;">{"十维度 | AHP权重 | 分段线性插值" if lang == "中文" else "10-dim | AHP | Piecewise Linear"}</div></div>', unsafe_allow_html=True)
-
+    with st.expander("ℹ️ 各指标计算逻辑" if lang == '中文' else "ℹ️ Metric calculations", expanded=False):
+        st.markdown(EXPLANATIONS['score']['cn' if lang == '中文' else 'en'])
     ind_info = {'ranking': ('关键词排名分布', 19, '加权排名分'), 'diversity': ('关键词多样性', 8, '有效词数'), 'trend': ('流量趋势', 20, 'F1+F2'), 'stability': ('流量稳定性', 8, '去趋势CV'), 'ctr': ('CTR效率', 14, '实际/基准'), 'page_activity': ('页面活跃度', 14, '点击页占比'), 'device': ('设备适配', 2, 'M/D比'), 'region': ('地区覆盖', 4, '国家+集中'), 'concentration': ('页面集中度', 2, 'Gini'), 'content': ('内容深度', 9, '覆盖+新鲜')}
     indicators = score_result['indicators']
     for k in ['ranking', 'diversity', 'trend', 'stability', 'ctr', 'page_activity', 'device', 'region', 'concentration', 'content']:
@@ -449,8 +467,8 @@ elif page in ["🎯 健康度评分", "🎯 Score"]:
             st.markdown(f"<span style='font-size:1.3rem;font-weight:700;color:{c};'>{s:.1f}</span>", unsafe_allow_html=True)
         with c3:
             st.markdown(f"<span style='color:#6b7280;'>{w}%</span>", unsafe_allow_html=True)
-
     st.markdown("---")
+    st.markdown(f"### {'📋 等级对照表' if lang == '中文' else '📋 Grades'}")
     gdf = pd.DataFrame([{'等级': g, '分数': f'{lo}-{hi-1 if hi != 101 else 100}', '描述': d} for lo, hi, g, d, _, _ in GRADE_SYSTEM])
     st.markdown(render_styled_table(gdf), unsafe_allow_html=True)
 
@@ -469,6 +487,8 @@ elif page in ["📈 搜索趋势", "📈 Trends"]:
             sd = st.date_input("开始" if lang == '中文' else "Start", value=df['data_date'].min(), key="ts")
         with ce:
             ed = st.date_input("结束" if lang == '中文' else "End", value=df['data_date'].max(), key="te")
+        with st.expander("ℹ️ 图表阅读指南" if lang == '中文' else "ℹ️ Chart guide", expanded=False):
+            st.markdown(EXPLANATIONS['trends']['cn' if lang == '中文' else 'en'])
         df_f = df[(df['data_date'] >= pd.to_datetime(sd)) & (df['data_date'] <= pd.to_datetime(ed))].copy()
         if len(df_f) > 0:
             df_f['MA7'] = df_f['clicks'].rolling(7, min_periods=1).mean()
@@ -482,7 +502,6 @@ elif page in ["📈 搜索趋势", "📈 Trends"]:
             fig.update_layout(height=650, hovermode='x unified', legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1), margin=dict(l=60, r=20, t=60, b=40), plot_bgcolor='#fff', paper_bgcolor='#fff')
             st.plotly_chart(fig, use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
-
             st.markdown(f"### {'📉 CTR & 排名' if lang == '中文' else '📉 CTR & Position'}")
             st.markdown('<div class="chart-fade">', unsafe_allow_html=True)
             fig2 = make_subplots(specs=[[{"secondary_y": True}]])
@@ -510,13 +529,17 @@ elif page in ["🔍 关键词洞察", "🔍 Keywords"]:
         topk = df.nlargest(1, 'clicks')['query'].values[0] if len(df) > 0 else '-'
         k1, k2, k3 = st.columns(3)
         with k1:
+            st.
+        k1, k2, k3 = st.columns(3)
+        with k1:
             st.metric("总关键词" if lang == '中文' else "Total", f"{tk:,}")
         with k2:
             st.metric("有点击" if lang == '中文' else "Clicked", f"{ck:,}")
         with k3:
             st.metric("Top", topk[:25])
-
         st.markdown("---")
+        with st.expander("ℹ️ 关键词分析说明" if lang == '中文' else "ℹ️ Keyword guide", expanded=False):
+            st.markdown(EXPLANATIONS['keywords']['cn' if lang == '中文' else 'en'])
         st.markdown(f"### {'🏆 Top 20' if lang == '中文' else '🏆 Top 20'}")
         t20 = df.nlargest(20, 'clicks')[['query', 'clicks', 'impressions', 'ctr', 'position']].reset_index(drop=True)
         t20.index = t20.index + 1
@@ -524,7 +547,6 @@ elif page in ["🔍 关键词洞察", "🔍 Keywords"]:
         t20['position'] = t20['position'].apply(lambda x: f"{x:.1f}")
         t20.columns = ['Keyword', 'Clicks', 'Impressions', 'CTR', 'Position']
         st.markdown(render_styled_table(t20, highlight_col='CTR'), unsafe_allow_html=True)
-
         st.markdown(f"### {'💎 机会矩阵' if lang == '中文' else '💎 Opportunities'}")
         st.caption("高展示+低CTR=优化机会" if lang == '中文' else "High imp + Low CTR = Opportunity")
         df_o = df[df['impressions'] >= 10].copy()
@@ -555,8 +577,9 @@ elif page in ["📄 页面分析", "📄 Pages"]:
             st.metric("活跃" if lang == '中文' else "Active", f"{ap}")
         with p3:
             st.metric("活跃率" if lang == '中文' else "Rate", f"{ar:.1%}")
-
         st.markdown("---")
+        with st.expander("ℹ️ 页面分析说明" if lang == '中文' else "ℹ️ Page guide", expanded=False):
+            st.markdown(EXPLANATIONS['pages']['cn' if lang == '中文' else 'en'])
         st.markdown(f"### {'🏆 Top 15' if lang == '中文' else '🏆 Top 15'}")
         st.markdown('<div class="chart-grow">', unsafe_allow_html=True)
         t15 = df.nlargest(15, 'clicks')[['page', 'clicks', 'impressions', 'ctr', 'position']].reset_index(drop=True)
@@ -564,7 +587,6 @@ elif page in ["📄 页面分析", "📄 Pages"]:
         fig_p.update_layout(height=600, yaxis=dict(tickfont=dict(size=11)), margin=dict(l=300, r=20, t=20, b=40), plot_bgcolor='#fff', paper_bgcolor='#fff')
         st.plotly_chart(fig_p, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
-
         st.markdown(f"### {'💎 优化机会' if lang == '中文' else '💎 Opportunities'}")
         hi = df[(df['impressions'] >= 50) & (df['clicks'] <= 5)].nlargest(10, 'impressions')
         if len(hi) > 0:
@@ -586,20 +608,22 @@ elif page in ["🌍 地区分析", "🌍 Countries"]:
         md = df.groupby('country').agg({'clicks': 'sum', 'impressions': 'sum', 'ctr': 'mean', 'position': 'mean'}).reset_index()
         md['country_upper'] = md['country'].str.upper()
         md['clicks_log'] = np.log1p(md['clicks'])
-
+        md['imp_log'] = np.log1p(md['impressions'])
+        with st.expander("ℹ️ 地区分析说明" if lang == '中文' else "ℹ️ Country guide", expanded=False):
+            st.markdown(EXPLANATIONS['countries']['cn' if lang == '中文' else 'en'])
         mm = st.selectbox("🗺️ 指标" if lang == '中文' else "🗺️ Metric", ['clicks', 'impressions', 'ctr', 'position'], format_func=lambda x: {'clicks': '点击', 'impressions': '展示', 'ctr': 'CTR', 'position': '排名'}[x] if lang == '中文' else x, key="ms")
-        cc = 'clicks_log' if mm == 'clicks' else (np.log1p(md['impressions']).name if mm == 'impressions' else mm)
-        if mm == 'impressions':
-            md['imp_log'] = np.log1p(md['impressions'])
+        if mm == 'clicks':
+            cc = 'clicks_log'
+        elif mm == 'impressions':
             cc = 'imp_log'
-        cs = 'Blues' if mm in ['clicks', 'impressions'] else ('Greens' if mm == 'ctr' else 'RdYlGn_r')
-
+        else:
+            cc = mm
+        cscale = 'Blues' if mm in ['clicks', 'impressions'] else ('Greens' if mm == 'ctr' else 'RdYlGn_r')
         st.markdown('<div class="chart-fadein">', unsafe_allow_html=True)
-        fig_m = go.Figure(data=go.Choropleth(locations=md['country_upper'], z=md[cc], locationmode='ISO-3', colorscale=cs, marker_line_color='#fff', marker_line_width=0.5))
+        fig_m = go.Figure(data=go.Choropleth(locations=md['country_upper'], z=md[cc], locationmode='ISO-3', colorscale=cscale, marker_line_color='#fff', marker_line_width=0.5))
         fig_m.update_layout(geo=dict(showframe=False, projection_type='natural earth', showland=True, landcolor='#f8f9fa'), height=550, margin=dict(l=0, r=0, t=40, b=0), paper_bgcolor='#fff')
         st.plotly_chart(fig_m, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
-
         st.markdown(f"### {'📊 Top 10' if lang == '中文' else '📊 Top 10'}")
         t10 = md.nlargest(10, 'clicks')[['country_upper', 'clicks', 'impressions', 'ctr', 'position']].reset_index(drop=True)
         t10.index = t10.index + 1
@@ -618,7 +642,9 @@ elif page in ["📱 设备分布", "📱 Devices"]:
     st.markdown(f'<div class="page-title">{"📱 设备分布" if lang == "中文" else "📱 Devices"}</div>', unsafe_allow_html=True)
     if data.get('by_device') is not None:
         df = data['by_device'].copy()
-        ds = df.groupby('device').agg({'clicks': 'sum', 'impressions': 'sum', 'ctr': 'mean', 'position': 'mean'}).reset_index()
+        ds = df.groupby('device').agg({'clicks': 'sum', 'impressions': 'sum'}).reset_index()
+        with st.expander("ℹ️ 设备分析说明" if lang == '中文' else "ℹ️ Device guide", expanded=False):
+            st.markdown(EXPLANATIONS['devices']['cn' if lang == '中文' else 'en'])
         cp, cb = st.columns(2)
         with cp:
             st.markdown(f"#### {'点击占比' if lang == '中文' else 'Share'}")
@@ -632,7 +658,6 @@ elif page in ["📱 设备分布", "📱 Devices"]:
             fc = px.bar(ds, x='device', y='ctr_p', color='device', color_discrete_sequence=['#1a56db', '#60a5fa', '#bfdbfe'])
             fc.update_layout(height=400, yaxis=dict(tickformat='.2%'), showlegend=False, plot_bgcolor='#fff', paper_bgcolor='#fff')
             st.plotly_chart(fc, use_container_width=True)
-
         st.markdown(f"### {'📈 月度趋势' if lang == '中文' else '📈 Monthly'}")
         df['data_date'] = pd.to_datetime(df['data_date'])
         df['month'] = df['data_date'].dt.to_period('M').astype(str)
@@ -642,7 +667,6 @@ elif page in ["📱 设备分布", "📱 Devices"]:
         ft.update_layout(height=400, plot_bgcolor='#fff', paper_bgcolor='#fff')
         st.plotly_chart(ft, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
-  
     else:
         st.warning("未找到设备数据" if lang == '中文' else "No device data")
 
@@ -657,6 +681,8 @@ elif page in ["🚨 异常检测", "🚨 Anomalies"]:
         df = df.sort_values('data_date').reset_index(drop=True)
         window = st.slider("窗口" if lang == '中文' else "Window", 7, 60, 28, key="aw")
         threshold = st.slider("Z阈值" if lang == '中文' else "Z", 1.5, 4.0, 2.5, 0.5, key="at")
+        with st.expander("ℹ️ 异常检测说明" if lang == '中文' else "ℹ️ Detection guide", expanded=False):
+            st.markdown(EXPLANATIONS['anomalies']['cn' if lang == '中文' else 'en'])
         df['rm'] = df['clicks'].rolling(window, min_periods=7).mean()
         df['rs'] = df['clicks'].rolling(window, min_periods=7).std()
         df['z'] = (df['clicks'] - df['rm']) / df['rs'].clip(lower=0.1)
@@ -699,8 +725,8 @@ elif page in ["🚨 异常检测", "🚨 Anomalies"]:
             da['rm'] = da['rm'].apply(lambda x: f"{x:.1f}")
             da['z'] = da['z'].apply(lambda x: f"{x:.2f}")
             da.columns = ['Date', 'Clicks', 'Expected', 'Z-Score', 'Type']
-            da_sorted = da.sort_values('Date', ascending=False).head(30).reset_index(drop=True)
-            st.markdown(render_styled_table(da_sorted), unsafe_allow_html=True)
+            da_s = da.sort_values('Date', ascending=False).head(30).reset_index(drop=True)
+            st.markdown(render_styled_table(da_s), unsafe_allow_html=True)
     else:
         st.warning("未找到数据" if lang == '中文' else "No data")
 
@@ -713,16 +739,18 @@ elif page in ["🚀 优化建议", "🚀 Actions"]:
     score_result = calculate_seo_score_v33(data)
     diagnosis = generate_diagnosis(score_result, lang)
     uc = sum(1 for d in diagnosis if d['level'] == 'urgent')
-    ac = sum(1 for d in diagnosis if d['level'] == 'attention')
-    hc = 10 - uc - ac
+    ac2 = sum(1 for d in diagnosis if d['level'] == 'attention')
+    hc = 10 - uc - ac2
     c1, c2, c3 = st.columns(3)
     with c1:
         st.metric("🔴 紧急" if lang == '中文' else "🔴 Urgent", f"{uc}")
     with c2:
-        st.metric("🟡 关注" if lang == '中文' else "🟡 Attention", f"{ac}")
+        st.metric("🟡 关注" if lang == '中文' else "🟡 Attention", f"{ac2}")
     with c3:
         st.metric("🟢 健康" if lang == '中文' else "🟢 Healthy", f"{hc}")
     st.markdown("---")
+    with st.expander("ℹ️ 建议逻辑说明" if lang == '中文' else "ℹ️ How this works", expanded=False):
+        st.markdown(EXPLANATIONS['actions']['cn' if lang == '中文' else 'en'])
     if diagnosis:
         st.markdown(f"### {'📋 行动清单' if lang == '中文' else '📋 Actions'}")
         im = {'ranking': '关键词排名' if lang == '中文' else 'Ranking', 'diversity': '多样性' if lang == '中文' else 'Diversity', 'trend': '流量趋势' if lang == '中文' else 'Trend', 'stability': '稳定性' if lang == '中文' else 'Stability', 'ctr': 'CTR' if lang == '中文' else 'CTR', 'page_activity': '页面活跃' if lang == '中文' else 'Activity', 'device': '设备' if lang == '中文' else 'Device', 'region': '地区' if lang == '中文' else 'Region', 'concentration': '集中度' if lang == '中文' else 'Concentration', 'content': '内容' if lang == '中文' else 'Content'}
@@ -745,7 +773,7 @@ elif page in ["🚀 优化建议", "🚀 Actions"]:
     imps.sort(key=lambda x: x['g'], reverse=True)
     tp = sum(i['g'] for i in imps)
     cs = score_result['final_score']
-    st.markdown(f'<div style="background:#eff6ff;padding:1.5rem;border-radius:12px;"><span style="font-size:1.1rem;font-weight:600;color:#1a56db;">{"当前" if lang == "中文" else "Now"}: {cs} → {"目标" if lang == "中文" else "Target"}: {cs + tp:.1f} (+{tp:.1f})</span></div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="background:#eff6ff;padding:1.5rem;border-radius:12px;"><span style="font-size:1.1rem;font-weight:600;color:#1a56db;">{"当前" if lang == "中文" else "Now"}: {cs} → {"目标(全达60)" if lang == "中文" else "Target(all 60)"}: {cs + tp:.1f} (+{tp:.1f})</span></div>', unsafe_allow_html=True)
     im2 = {'ranking': '排名' if lang == '中文' else 'Rank', 'diversity': '多样性' if lang == '中文' else 'Div', 'trend': '趋势' if lang == '中文' else 'Trend', 'stability': '稳定' if lang == '中文' else 'Stab', 'ctr': 'CTR', 'page_activity': '活跃' if lang == '中文' else 'Act', 'device': '设备' if lang == '中文' else 'Dev', 'region': '地区' if lang == '中文' else 'Reg', 'concentration': '集中' if lang == '中文' else 'Conc', 'content': '内容' if lang == '中文' else 'Cont'}
     if imps:
         st.markdown('<div class="chart-grow">', unsafe_allow_html=True)
@@ -755,3 +783,6 @@ elif page in ["🚀 优化建议", "🚀 Actions"]:
         st.markdown('</div>', unsafe_allow_html=True)
     st.markdown("---")
     st.info("💡 外链权威维度已预留，待接入Ahrefs/Moz API后扩展。" if lang == '中文' else "💡 Backlink reserved for API integration.")
+
+
+
